@@ -33,8 +33,7 @@ class ModelToOpenApiSchema extends ModelsCommand
      */
     public function handle()
     {
-        $this->write = true;
-
+        $this->input->setOption('write', true);
         return parent::handle();
     }
 
