@@ -29,7 +29,7 @@ class L5SwaggerComment extends Command
      *
      * @var string
      */
-    protected $signature = 'make:l5-swagger-comment';
+    protected $signature = 'openapi:l5-swagger-comment';
 
     /**
      * The console command description.
