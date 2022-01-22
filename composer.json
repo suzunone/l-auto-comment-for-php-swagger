@@ -4,7 +4,8 @@
     "type": "library",
     "require": {
         "darkaonline/l5-swagger": "^8.1",
-        "barryvdh/laravel-ide-helper": "^2.11"
+        "barryvdh/laravel-ide-helper": "^2.11",
+      "ext-mbstring": "*"
     },
     "license": "MIT",
     "autoload": {
