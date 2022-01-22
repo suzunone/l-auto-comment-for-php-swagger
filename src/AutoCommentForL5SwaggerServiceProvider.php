@@ -21,8 +21,7 @@ class AutoCommentForL5SwaggerServiceProvider extends ServiceProvider
     public function boot()
     {
         //Register commands
-        $this->commands([L5SwaggerComment::class]);
-        $this->commands([ModelToOpenApiSchema::class]);
+        $this->commands([L5SwaggerComment::class, ModelToOpenApiSchema::class]);
     }
 
     /**
