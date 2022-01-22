@@ -8,12 +8,12 @@
 namespace AutoCommentForL5Swagger\Commands;
 
 use App\Http\Controllers\L5Swagger\OpenApiDoc;
-use function collect;
 use Illuminate\Console\Command;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
-use function optional;
 use Str;
+use function collect;
+use function optional;
 
 class L5SwaggerComment extends Command
 {
@@ -47,8 +47,7 @@ class L5SwaggerComment extends Command
         $comment = <<<'COMMENT'
 /**
 
-COMMENT;
-        ;
+COMMENT;;
         foreach ($route as $route_item) {
             foreach ($route_item['methods'] as $method) {
                 $comment .= $this->getL5Comment($method, $route_item);
@@ -98,7 +97,8 @@ COMMENT;
 COMMENT;
 
         if (isset($anntation['openapi-ignore-cookie'])) {
-            $comment .= $this->getCookie();
+            $cookie_name = $anntation['openapi-cookie'][0][0] ?? $this->laravel['config']->get('auto-comment-for-l5-swagger.session_cookie_name', 'session_cookie');
+            $comment .= $this->getCookie($cookie_name, isset($anntation['openapi-ignore-session-cookie']), isset($anntation['openapi-ignore-csrf-cookie']));
         }
 
         foreach ($route_item['attributes'] as $attribute) {
@@ -239,11 +239,11 @@ COMMENT;
         })->filter()->all();
     }
 
-    protected function getCookie()
+    protected function getCookie($cookie_name = 'session_cookie', $ignore_session_cookie = false, $ignore_csrf_cookie = false)
     {
-        $cookie_name = $this->laravel['config']->get('auto-comment-for-l5-swagger.session_cookie_name', 'session_cookie');
-
-        return <<<'Comment'
+        $comment = '';
+        if (!$ignore_session_cookie) {
+            $comment .= <<<Comment
  *      @OA\Parameter(
  *          name="{$cookie_name}",
  *          description="session cookie",
@@ -253,6 +253,11 @@ COMMENT;
  *          in="cookie",
  *          required=false
  *      ),
+
+Comment;
+        }
+        if (!$ignore_csrf_cookie) {
+            $comment .= <<<Comment
  *      @OA\Parameter(
  *          name="X-CSRF-TOKEN",
  *          description="CSRF-TOKEN",
@@ -273,6 +278,8 @@ COMMENT;
  *      ),
 
 Comment;
+        }
+        return $comment;
     }
 
     /**
