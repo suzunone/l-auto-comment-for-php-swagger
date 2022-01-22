@@ -1,0 +1,52 @@
+<?php
+
+/**
+ * This file is part of auto-comment-for-l5-swagger
+ *
+ */
+
+namespace App\Schemas;
+
+/**
+ * @OA\Schema(
+ *   schema="NewClassName",
+ *   required={OARequired}
+ * )
+ */
+class NewClassName
+{
+// properties //
+}
+
+/**
+ * @OA\Schema(
+ *   schema="ClassName",
+ *   type="object",
+ *   allOf={
+ *       @OA\Schema(ref="#/components/schemas/NewClassName"),
+ *       @OA\Schema(
+ *           required={"id"},
+ *           @OA\Property(property="id", format="int64", type="integer")
+ *       )
+ *   }
+ * )
+ *
+ * @OA\Schema(
+ *   schema="ClassNames",
+ *   type="object",
+ *   allOf={
+ *         @OA\Property(
+ *           property="ClassNames",
+ *           type="array",
+ *           @OA\Items(
+ *             ref="#/components/schemas/ClassName"
+ *           )
+ *         )
+ *
+ *   }
+ * )
+ *
+ */
+class ClassName
+{
+}

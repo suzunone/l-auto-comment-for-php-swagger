@@ -1,0 +1,28 @@
+{
+    "name": "suzunone/auto-comment-for-l5-swagger",
+    "description": "auto-comment-for-l5-swagger",
+    "type": "library",
+    "require": {
+        "darkaonline/l5-swagger": "^8.1",
+        "barryvdh/laravel-ide-helper": "^2.11"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "AutoCommentForL5Swagger\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "suzunone",
+            "email": "suzunone.eleven@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "AutoCommentForL5Swagger\\AutoCommentForL5SwaggerServiceProvider"
+            ]
+        }
+    }
+}

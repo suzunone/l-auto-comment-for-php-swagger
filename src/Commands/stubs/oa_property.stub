@@ -1,0 +1,4 @@
+  /**
+   * @OA\Property(type=TypeProperty,description="TypeDescription")
+   */
+  public $VariableName;
