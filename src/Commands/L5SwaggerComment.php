@@ -96,7 +96,7 @@ COMMENT;;
 
 COMMENT;
 
-        if (isset($anntation['openapi-ignore-cookie'])) {
+        if (!isset($anntation['openapi-ignore-cookie'])) {
             $cookie_name = $anntation['openapi-cookie'][0][0] ?? $this->laravel['config']->get('auto-comment-for-l5-swagger.session_cookie_name', 'session_cookie');
             $comment .= $this->getCookie($cookie_name, isset($anntation['openapi-ignore-session-cookie']), isset($anntation['openapi-ignore-csrf-cookie']));
         }
