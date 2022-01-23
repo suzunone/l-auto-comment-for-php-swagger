@@ -48,7 +48,7 @@ class L5SwaggerComment extends Command
 /**
 
 COMMENT;
-        
+
         foreach ($route as $route_item) {
             foreach ($route_item['methods'] as $method) {
                 $comment .= $this->getL5Comment($method, $route_item);

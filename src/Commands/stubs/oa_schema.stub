@@ -36,7 +36,7 @@ class NewClassName
  *   type="object",
  *   allOf={
  *         @OA\Property(
- *           property="ClassNames",
+ *           property="data",
  *           type="array",
  *           @OA\Items(
  *             ref="#/components/schemas/ClassName"
