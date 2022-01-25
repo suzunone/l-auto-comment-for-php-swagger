@@ -193,6 +193,11 @@ COMMENT;
 
     public function formRequestToComment($class_name)
     {
+        if (class_exists($class_name)) {
+            $this->error($class_name . 'is not found');
+            return;
+        }
+
         $reflection = new \ReflectionClass($class_name);
 
         preg_match_all('/@property(-read)? +([^ ]+) +[$]?([^ ]+) +(.*)/', $reflection->getDocComment(), $match);
