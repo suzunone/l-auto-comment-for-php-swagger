@@ -41,6 +41,11 @@ class L5SwaggerComment extends Command
     public function handle(Router $Router)
     {
         // $this->call('make:controller', ['name' => 'L5Swagger/OpenApiDoc']);
+        if (!class_exists(OpenApiDoc::class)) {
+            $this->comment('please call php artisan make:controller L5Swagger/OpenApiDoc');
+            return -1;
+        }
+
         $this->router = $Router;
         $route = $this->getRoutes();
 
@@ -317,6 +322,13 @@ Comment;
             return [];
         }
         [$class, $method] = explode('@', $action);
+
+        if (class_exists($class)) {
+            $this->error($class . 'is not found');
+            return;
+        }
+
+
         $refClas = new \ReflectionClass(\App::make($class));
 
         $attribute = $refClas->hasMethod($method) ? $refClas->getMethod($method)->getParameters() : [];
@@ -336,6 +348,12 @@ Comment;
             return '';
         }
         [$class, $method] = explode('@', $action);
+
+        if (class_exists($class)) {
+            $this->error($class . 'is not found');
+            return;
+        }
+
         $refClas = new \ReflectionClass(\App::make($class));
 
         return $refClas->hasMethod($method) ? $refClas->getMethod($method)->getDocComment() : '';
