@@ -198,7 +198,7 @@ COMMENT;
 
     public function formRequestToComment($class_name)
     {
-        if (class_exists($class_name)) {
+        if (!class_exists($class_name)) {
             $this->error($class_name . 'is not found');
             return;
         }
@@ -323,7 +323,7 @@ Comment;
         }
         [$class, $method] = explode('@', $action);
 
-        if (class_exists($class)) {
+        if (!class_exists($class)) {
             $this->error($class . 'is not found');
             return;
         }
@@ -349,7 +349,7 @@ Comment;
         }
         [$class, $method] = explode('@', $action);
 
-        if (class_exists($class)) {
+        if (!class_exists($class)) {
             $this->error($class . 'is not found');
             return;
         }
