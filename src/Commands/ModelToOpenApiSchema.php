@@ -26,7 +26,7 @@ class ModelToOpenApiSchema extends ModelsCommand
      */
     protected $description = 'Create open api schema file for models';
 
-    protected $config_root = 'auto-comment-for-l5-swagger.';
+    protected $config_root = 'auto-comment-for-l5-swagger.documentations.';
 
     protected $schema_path = '';
 

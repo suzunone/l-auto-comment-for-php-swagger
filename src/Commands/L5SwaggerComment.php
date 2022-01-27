@@ -32,7 +32,7 @@ class L5SwaggerComment extends Command
 
     protected $router;
 
-    protected $config_root = 'auto-comment-for-l5-swagger.';
+    protected $config_root = 'auto-comment-for-l5-swagger.documentations.';
 
     /**
      * Execute the console command.
