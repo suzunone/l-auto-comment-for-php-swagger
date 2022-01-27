@@ -28,7 +28,7 @@ class L5SwaggerComment extends Command
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'l5 swagger用のコメントを自動生成する';
 
     protected $router;
 
