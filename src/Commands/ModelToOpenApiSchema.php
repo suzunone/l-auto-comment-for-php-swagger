@@ -194,9 +194,14 @@ class ModelsCommand extends Command
      */
     protected function getArguments()
     {
-        return [
-            ['model', InputArgument::OPTIONAL | InputArgument::IS_ARRAY, 'Which models to include', []],
-        ];
+        return array_merge(
+            [
+                ['type', InputArgument::OPTIONAL, 'config select', 'default'],
+            ],
+            [
+                ['model', InputArgument::OPTIONAL | InputArgument::IS_ARRAY, 'Which models to include', []],
+            ]
+        );
     }
 
     /**

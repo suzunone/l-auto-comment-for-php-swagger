@@ -5,7 +5,7 @@
  *
  */
 
-namespace App\Schemas;
+namespace __Namespaces__;
 
 /**
  * @OA\Schema(
