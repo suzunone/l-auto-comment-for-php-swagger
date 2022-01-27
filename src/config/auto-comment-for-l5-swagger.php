@@ -12,6 +12,11 @@ return [
             'ignored_models' => [],
             'ControllerName' => \App\Http\Controllers\L5Swagger\OpenApiDoc::class,
             'schema_path' => base_path('app/Schemas'),
+            'ignored_route_names' => [
+                'l5-swagger.default.api'
+            ],
+            'enabled_route_names' => [
+            ],
         ],
     ],
 ];

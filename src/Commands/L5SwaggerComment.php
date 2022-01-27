@@ -43,11 +43,11 @@ class L5SwaggerComment extends Command
     {
         $type = $this->argument('type') ?? 'default';
         $this->config_root .= $type . '.';
-        $OpenApiDoc = $this->laravel['config']->get($this->config_root . 'ControllerName', App\Http\Controllers\L5Swagger\OpenApiDoc::class);
+        $OpenApiDoc = $this->laravel['config']->get($this->config_root . 'ControllerName', \App\Http\Controllers\L5Swagger\OpenApiDoc::class);
 
         // $this->call('make:controller', ['name' => 'L5Swagger/OpenApiDoc']);
         if (!class_exists($OpenApiDoc)) {
-            $this->comment('please call php artisan make:controller');
+            $this->comment('please call php artisan make:controller ' . $OpenApiDoc);
 
             return -1;
         }
@@ -252,9 +252,18 @@ COMMENT;
      */
     protected function getRoutes()
     {
+        $ignored_route_names = $this->laravel['config']->get($this->config_root . 'ignored_route_names', []);
+        $enabled_route_names = $this->laravel['config']->get($this->config_root . 'enabled_route_names', []);
+
         return collect($this->router->getRoutes())->map(function ($route) {
             return $this->getRouteInformation($route);
-        })->filter()->all();
+        })->filter(function ($item) use ($ignored_route_names, $enabled_route_names) {
+            if (empty($enabled_route_names)) {
+                return !in_array($item['name'], $ignored_route_names);
+            }
+            
+            return in_array($item['name'], $enabled_route_names);
+        })->all();
     }
 
     protected function getCookie($cookie_name = 'session_cookie', $ignore_session_cookie = false, $ignore_csrf_cookie = false)
