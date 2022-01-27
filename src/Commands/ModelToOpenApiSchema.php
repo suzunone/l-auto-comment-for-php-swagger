@@ -17,7 +17,7 @@ class ModelToOpenApiSchema extends ModelsCommand
      *
      * @var string
      */
-    protected $name = 'openapi:create-model-to-schema {type?}';
+    protected $signature = 'openapi:create-model-to-schema {type?}';
 
     /**
      * The console command description.
