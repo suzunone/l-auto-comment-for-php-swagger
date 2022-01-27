@@ -3,7 +3,7 @@
  * This file is part of auto-comment-for-l5-swagger
  *
  */
-namespace App\Http\Controllers\L5Swagger;
+namespace __Namespaces__;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;

@@ -45,12 +45,16 @@ class L5SwaggerComment extends Command
         $this->config_root .= $type . '.';
         $OpenApiDoc = $this->laravel['config']->get($this->config_root . 'ControllerName', \App\Http\Controllers\L5Swagger\OpenApiDoc::class);
 
+
         // $this->call('make:controller', ['name' => 'L5Swagger/OpenApiDoc']);
         if (!class_exists($OpenApiDoc)) {
             $this->comment('please call php artisan make:controller ' . $OpenApiDoc);
 
             return -1;
         }
+
+        $OpenApiDocRef = new \ReflectionClass(new $OpenApiDoc);
+        $namespace = $OpenApiDocRef->getNamespaceName();
 
         $this->router = $Router;
         $route = $this->getRoutes();
@@ -71,6 +75,7 @@ COMMENT;
         $stub = file_get_contents(__DIR__ . '/stubs/lg_swagger_controller.stub');
 
         $stub = str_replace('// OpenApiDoc //', $comment, $stub);
+        $stub = str_replace('__Namespaces__', $namespace, $stub);
 
         file_put_contents((new \ReflectionClass($OpenApiDoc))->getFileName(), $stub);
     }
