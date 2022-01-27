@@ -6,6 +6,12 @@
  */
 
 return [
-    'session_cookie_name' => 'session_cookie_name',
-    'ignored_models' => [],
+    'documentations' => [
+        'default' => [
+            'session_cookie_name' => 'session_cookie_name',
+            'ignored_models' => [],
+            'ControllerName' => \App\Http\Controllers\L5Swagger\OpenApiDoc::class,
+            'schema_path' => base_path('app/Schemas'),
+        ],
+    ],
 ];

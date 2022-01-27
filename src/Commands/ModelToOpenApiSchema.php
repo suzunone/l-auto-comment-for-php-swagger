@@ -17,7 +17,7 @@ class ModelToOpenApiSchema extends ModelsCommand
      *
      * @var string
      */
-    protected $name = 'openapi:create-model-to-schema';
+    protected $name = 'openapi:create-model-to-schema {type?}';
 
     /**
      * The console command description.
@@ -26,6 +26,10 @@ class ModelToOpenApiSchema extends ModelsCommand
      */
     protected $description = 'Create open api schema file for models';
 
+    protected $config_root = 'auto-comment-for-l5-swagger.';
+
+    protected $schema_path = '';
+
     /**
      * Execute the console command.
      *
@@ -33,6 +37,10 @@ class ModelToOpenApiSchema extends ModelsCommand
      */
     public function handle()
     {
+        $type = $this->argument('type') ?? 'default';
+        $this->config_root .= $type . '.';
+        $this->schema_path = $this->laravel['config']->get($this->config_root . 'schema_path', $path = $this->laravel['path'] . '/Schemas/');
+
         $this->input->setOption('write', true);
 
         return parent::handle();
@@ -52,7 +60,8 @@ class ModelToOpenApiSchema extends ModelsCommand
     /** @noinspection SlowArrayOperationsInLoopInspection */
     protected function generateDocs($loadModels, $ignore = '')
     {
-        $path = $this->laravel['path'] . '/Schemas/';
+        $path = rtrim($this->schema_path, '/') . '/';
+
         $output = '';
 
         $hasDoctrine = interface_exists('Doctrine\DBAL\Driver');
@@ -68,7 +77,7 @@ class ModelToOpenApiSchema extends ModelsCommand
 
         $ignore = array_merge(
             explode(',', $ignore),
-            $this->laravel['config']->get('auto-comment-for-l5-swagger.ignored_models', [])
+            $this->laravel['config']->get($this->config_root . 'ignored_models', [])
         );
 
         foreach ($models as $name) {

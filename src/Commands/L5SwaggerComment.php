@@ -7,7 +7,6 @@
 
 namespace AutoCommentForL5Swagger\Commands;
 
-use App\Http\Controllers\L5Swagger\OpenApiDoc;
 use function collect;
 use Illuminate\Console\Command;
 use Illuminate\Routing\Route;
@@ -22,7 +21,7 @@ class L5SwaggerComment extends Command
      *
      * @var string
      */
-    protected $name = 'openapi:l5-swagger-comment';
+    protected $name = 'openapi:l5-swagger-comment {type?}';
 
     /**
      * The console command description.
@@ -33,6 +32,8 @@ class L5SwaggerComment extends Command
 
     protected $router;
 
+    protected $config_root = 'auto-comment-for-l5-swagger.';
+
     /**
      * Execute the console command.
      *
@@ -40,9 +41,14 @@ class L5SwaggerComment extends Command
      */
     public function handle(Router $Router)
     {
+        $type = $this->argument('type') ?? 'default';
+        $this->config_root .= $type . '.';
+        $OpenApiDoc = $this->laravel['config']->get($this->config_root . 'ControllerName', App\Http\Controllers\L5Swagger\OpenApiDoc::class);
+
         // $this->call('make:controller', ['name' => 'L5Swagger/OpenApiDoc']);
-        if (!class_exists(OpenApiDoc::class)) {
-            $this->comment('please call php artisan make:controller L5Swagger/OpenApiDoc');
+        if (!class_exists($OpenApiDoc)) {
+            $this->comment('please call php artisan make:controller');
+
             return -1;
         }
 
@@ -66,7 +72,7 @@ COMMENT;
 
         $stub = str_replace('// OpenApiDoc //', $comment, $stub);
 
-        file_put_contents((new \ReflectionClass(OpenApiDoc::class))->getFileName(), $stub);
+        file_put_contents((new \ReflectionClass($OpenApiDoc))->getFileName(), $stub);
     }
 
     public function getL5Comment($method, $route_item)
@@ -103,7 +109,7 @@ COMMENT;
 COMMENT;
 
         if (!isset($anntation['openapi-ignore-cookie'])) {
-            $cookie_name = $anntation['openapi-cookie'][0][0] ?? $this->laravel['config']->get('auto-comment-for-l5-swagger.session_cookie_name', 'session_cookie');
+            $cookie_name = $anntation['openapi-cookie'][0][0] ?? $this->laravel['config']->get($this->config_root . 'session_cookie_name', 'session_cookie');
             $comment .= $this->getCookie($cookie_name, isset($anntation['openapi-ignore-session-cookie']), isset($anntation['openapi-ignore-csrf-cookie']));
         }
 
@@ -200,6 +206,7 @@ COMMENT;
     {
         if (!class_exists($class_name)) {
             $this->error($class_name . 'is not found');
+
             return;
         }
 
@@ -325,9 +332,9 @@ Comment;
 
         if (!class_exists($class)) {
             $this->error($class . 'is not found');
+
             return;
         }
-
 
         $refClas = new \ReflectionClass(\App::make($class));
 
@@ -351,6 +358,7 @@ Comment;
 
         if (!class_exists($class)) {
             $this->error($class . 'is not found');
+
             return;
         }
 
