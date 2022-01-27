@@ -54,7 +54,7 @@ use Throwable;
  *
  * @author Barry vd. Heuvel <barryvdh@gmail.com>
  */
-class ModelsCommand extends Command
+class ModelToOpenApiSchema extends Command
 {
     protected const RELATION_TYPES = [
         'hasMany' => HasMany::class,
