@@ -261,7 +261,7 @@ COMMENT;
             if (empty($enabled_route_names)) {
                 return !in_array($item['name'], $ignored_route_names);
             }
-            
+
             return in_array($item['name'], $enabled_route_names);
         })->all();
     }
