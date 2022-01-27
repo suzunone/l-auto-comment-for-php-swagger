@@ -21,7 +21,7 @@ class L5SwaggerComment extends Command
      *
      * @var string
      */
-    protected $name = 'openapi:l5-swagger-comment {type?}';
+    protected $signature = 'openapi:l5-swagger-comment {type?}';
 
     /**
      * The console command description.
