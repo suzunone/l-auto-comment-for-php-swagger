@@ -45,7 +45,6 @@ class L5SwaggerComment extends Command
         $this->config_root .= $type . '.';
         $OpenApiDoc = $this->laravel['config']->get($this->config_root . 'ControllerName', \App\Http\Controllers\L5Swagger\OpenApiDoc::class);
 
-
         // $this->call('make:controller', ['name' => 'L5Swagger/OpenApiDoc']);
         if (!class_exists($OpenApiDoc)) {
             $this->comment('please call php artisan make:controller ' . $OpenApiDoc);

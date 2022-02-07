@@ -167,8 +167,11 @@ class ModelToOpenApiSchema extends ModelsCommand
 
                     $schema = file_get_contents($this->getStub('oa_schema'));
 
-                    $schema = str_replace(['// properties //', 'ClassName', 'OARequired', '__Namespaces__'],
-                        [$properties, $reflectionClass->getShortName(), join(',', $OARequired), $this->laravel['config']->get($this->config_root . 'schema_name_space')], $schema);
+                    $schema = str_replace(
+                        ['// properties //', 'ClassName', 'OARequired', '__Namespaces__'],
+                        [$properties, $reflectionClass->getShortName(), join(',', $OARequired), $this->laravel['config']->get($this->config_root . 'schema_name_space')],
+                        $schema
+                    );
 
                     file_put_contents($path . $reflectionClass->getShortName() . '.php', $schema);
 
