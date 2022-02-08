@@ -7,7 +7,7 @@
 
 namespace AutoCommentForL5Swagger;
 
-use AutoCommentForL5Swagger\Commands\L5SwaggerComment;
+use AutoCommentForL5Swagger\Commands\FileToAnnotationComment;
 use AutoCommentForL5Swagger\Commands\ModelToOpenApiSchema;
 use Illuminate\Support\ServiceProvider;
 
@@ -20,7 +20,7 @@ class AutoCommentForL5SwaggerServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $configPath = __DIR__. '/config/auto-comment-for-l5-swagger.php';
+        $configPath = __DIR__ . '/config/auto-comment-for-l5-swagger.php';
         if (function_exists('config_path')) {
             $publishPath = config_path('auto-comment-for-l5-swagger.php');
         } else {
@@ -37,7 +37,7 @@ class AutoCommentForL5SwaggerServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $configPath = __DIR__. '/config/auto-comment-for-l5-swagger.php';
+        $configPath = __DIR__ . '/config/auto-comment-for-l5-swagger.php';
 
         // merge default config
         $this->mergeConfigFrom(
@@ -46,6 +46,6 @@ class AutoCommentForL5SwaggerServiceProvider extends ServiceProvider
         );
 
         //Register commands
-        $this->commands([L5SwaggerComment::class, ModelToOpenApiSchema::class]);
+        $this->commands([FileToAnnotationComment::class, ModelToOpenApiSchema::class, FileToAnnotationComment::class]);
     }
 }

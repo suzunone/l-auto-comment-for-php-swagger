@@ -5,7 +5,8 @@
     "require": {
         "darkaonline/l5-swagger": "^8.1",
         "barryvdh/laravel-ide-helper": "^2.11",
-      "ext-mbstring": "*"
+      "ext-mbstring": "*",
+        "ext-json": "*"
     },
     "license": "MIT",
     "autoload": {
