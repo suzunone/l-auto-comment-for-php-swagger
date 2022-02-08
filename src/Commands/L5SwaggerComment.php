@@ -11,8 +11,8 @@ use function collect;
 use Illuminate\Console\Command;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
-use function optional;
 use Illuminate\Support\Str;
+use function optional;
 
 class L5SwaggerComment extends Command
 {
@@ -37,6 +37,7 @@ class L5SwaggerComment extends Command
     /**
      * Execute the console command.
      *
+     * @throws \ReflectionException
      * @return int
      */
     public function handle(Router $Router)
@@ -47,7 +48,7 @@ class L5SwaggerComment extends Command
 
         // $this->call('make:controller', ['name' => 'L5Swagger/OpenApiDoc']);
         if (!class_exists($OpenApiDoc)) {
-            $this->comment('please call php artisan make:controller ' . $OpenApiDoc);
+            $this->comment('please call php artisan make:controller ' . str_replace("\\", '/', $OpenApiDoc));
 
             return -1;
         }
@@ -92,6 +93,7 @@ COMMENT;
         if (isset($anntation['openapi-tags'])) {
             $tags = [];
             foreach ($anntation['openapi-tags'] as $item) {
+                /** @noinspection SlowArrayOperationsInLoopInspection */
                 $tags = array_merge($tags, $item);
             }
         }

@@ -9,11 +9,11 @@ namespace __Namespaces__;
 
 /**
  * @OA\Schema(
- *   schema="NewClassName",
+ *   schema="CreateClassName",
  *   required={OARequired}
  * )
  */
-class NewClassName
+class CreateClassName
 {
 // properties //
 }
@@ -23,7 +23,7 @@ class NewClassName
  *   schema="ClassName",
  *   type="object",
  *   allOf={
- *       @OA\Schema(ref="#/components/schemas/NewClassName"),
+ *       @OA\Schema(ref="#/components/schemas/CreateClassName"),
  *       @OA\Schema(
  *           required={"id"},
  *           @OA\Property(property="id", format="int64", type="integer")
