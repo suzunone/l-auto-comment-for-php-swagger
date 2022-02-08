@@ -12,7 +12,7 @@ use Illuminate\Console\Command;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
 use function optional;
-use Str;
+use Illuminate\Support\Str;
 
 class L5SwaggerComment extends Command
 {

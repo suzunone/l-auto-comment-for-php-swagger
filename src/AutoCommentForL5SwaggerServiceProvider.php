@@ -8,6 +8,7 @@
 namespace AutoCommentForL5Swagger;
 
 use AutoCommentForL5Swagger\Commands\FileToAnnotationComment;
+use AutoCommentForL5Swagger\Commands\L5SwaggerComment;
 use AutoCommentForL5Swagger\Commands\ModelToOpenApiSchema;
 use Illuminate\Support\ServiceProvider;
 
@@ -46,6 +47,6 @@ class AutoCommentForL5SwaggerServiceProvider extends ServiceProvider
         );
 
         //Register commands
-        $this->commands([FileToAnnotationComment::class, ModelToOpenApiSchema::class, FileToAnnotationComment::class]);
+        $this->commands([FileToAnnotationComment::class, ModelToOpenApiSchema::class, L5SwaggerComment::class]);
     }
 }
