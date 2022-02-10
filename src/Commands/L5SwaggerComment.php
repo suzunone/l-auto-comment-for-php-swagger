@@ -7,6 +7,7 @@
 
 namespace AutoCommentForL5Swagger\Commands;
 
+use AutoCommentForL5Swagger\Libs\SwagIt;
 use function collect;
 use Illuminate\Console\Command;
 use Illuminate\Routing\Route;
@@ -59,7 +60,9 @@ class L5SwaggerComment extends Command
         $this->router = $Router;
         $route = $this->getRoutes();
 
-        $comment = <<<'COMMENT'
+        $comment = $this->templateToComment();
+
+        $comment .= <<<'COMMENT'
 /**
 
 COMMENT;
@@ -393,5 +396,27 @@ Comment;
         return collect($this->router->gatherRouteMiddleware($route))->map(function ($middleware) {
             return $middleware instanceof \Closure ? 'Closure' : $middleware;
         })->implode("\n");
+    }
+
+    protected function templateToComment()
+    {
+        $swagger_json_files = $this->laravel['config']->get($this->config_root . 'swagger_json_files', []);
+        $swagger_yaml_files = $this->laravel['config']->get($this->config_root . 'swagger_yaml_files', []);
+        $comment = '';
+        foreach ($swagger_json_files as $file_name) {
+            $data = json_decode(file_get_contents($file_name), true, 512, JSON_THROW_ON_ERROR);
+
+            $swagit = new SwagIt($this->option('tab-size'), $this->option('tab-init'));
+            $comment .= $swagit->convert($data);
+        }
+
+        foreach ($swagger_yaml_files as $file_name) {
+            $data = $data = \Symfony\Component\Yaml\Yaml::parse($file_name);
+
+            $swagit = new SwagIt(2, 2);
+            $comment .= $swagit->convert($data);
+        }
+
+        return $comment;
     }
 }
