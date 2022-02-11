@@ -105,12 +105,10 @@ COMMENT;
 
         $description = $this->parseDescriotion($route_item['doc_comment']);
 
-        $operationId = strtolower($method) . Str::studly(str_replace('.', '-', $route_item['name']));
-
         $comment = <<<COMMENT
  * @OA\\{$method}(
  *     tags={"{$tags}"},
- *     operationId="{$operationId}",
+ *     operationId="{$route_item['id']}",
  *     path="/{$route_item['uri']}",
  *     description="{$description}",
  *
@@ -329,10 +327,24 @@ Comment;
     {
         $action = '\\' . ltrim($route->getActionName(), '\\');
 
+        if ($route->getName()) {
+            $id = strtolower($route->methods()) . Str::studly(str_replace('.', '-', $route->getName()));
+        } else {
+            $uri = collect(explode('/', trim($route->uri(), '/')));
+            $uri->map(function ($item) {
+                $item = trim($item, '{}');
+                $item = str_replace('.', '-', $item);
+
+                return Str::studly($item);
+            });
+            $id = strtolower($route->methods()) . $uri->implode('');
+        }
+
         return [
             'domain' => $route->domain(),
             'methods' => $route->methods(),
             'uri' => $route->uri(),
+            'id' => $id,
             'name' => $route->getName(),
             'action' => $action,
             'middleware' => $this->getMiddleware($route),
