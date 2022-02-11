@@ -153,6 +153,10 @@ class ModelToOpenApiSchema extends ModelsCommand
                         $_TypeProperty = $TypeProperty;
                         if (strpos($_TypeProperty, 'integer') !== false) {
                             $TypeProperty = '"integer"';
+                        } elseif (strpos($_TypeProperty, 'double') !== false) {
+                            $TypeProperty = '"number"';
+                        } elseif (strpos($_TypeProperty, 'float') !== false) {
+                            $TypeProperty = '"number"';
                         } elseif (strpos($_TypeProperty, 'string') !== false) {
                             $TypeProperty = '"string"';
                         } elseif (strpos($_TypeProperty, 'boolean') !== false) {
@@ -162,7 +166,7 @@ class ModelToOpenApiSchema extends ModelsCommand
                         } elseif (strpos($_TypeProperty, 'Carbon') !== false) {
                             $TypeProperty = '"string"';
                         } else {
-                            $TypeProperty = '"any"';
+                            $TypeProperty = '"string"';
                         }
 
                         if (strpos($_TypeProperty, 'null')) {
