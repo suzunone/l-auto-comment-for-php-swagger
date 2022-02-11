@@ -144,7 +144,7 @@ class ModelToOpenApiSchema extends ModelsCommand
                             continue;
                         }
 
-                        $TypeProperty = str_replace(['int', 'bool', 'boolbool', '|'], ['integer', 'boolean', 'bool', ','], $TypeProperty);
+                        $TypeProperty = str_replace(['timestamp', 'date', 'datetime', 'int', 'bool', 'boolbool', '|'], ['string','string','string','integer', 'boolean', 'bool', ','], $TypeProperty);
 
                         $_TypeProperty = $TypeProperty;
                         if (strpos($_TypeProperty, 'integer') !== false) {
