@@ -92,7 +92,13 @@ COMMENT;
             return '';
         }
 
-        $tags = [Str::studly(explode('.', $route_item['name'])[0])];
+        $rote_names = explode('.', $route_item['name']);
+        $action = explode('@', $route_item['action'])[0];
+        $action = str_replace(["\\App\\Http\\Controllers", 'Controller'], '', $action);
+        $action = trim($action, "\\");
+
+        $tags = explode("\\", $action);
+
         if (isset($anntation['openapi-tags'])) {
             $tags = [];
             foreach ($anntation['openapi-tags'] as $item) {
