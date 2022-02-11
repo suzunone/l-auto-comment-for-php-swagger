@@ -8,8 +8,10 @@
 namespace AutoCommentForL5Swagger\Commands;
 
 use Barryvdh\LaravelIdeHelper\Console\ModelsCommand;
+use ReflectionClass;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
+use Throwable;
 
 class ModelToOpenApiSchema extends ModelsCommand
 {
@@ -94,7 +96,7 @@ class ModelToOpenApiSchema extends ModelsCommand
             if (class_exists($name)) {
                 try {
                     // handle abstract classes, interfaces, ...
-                    $reflectionClass = new \ReflectionClass($name);
+                    $reflectionClass = new ReflectionClass($name);
 
                     if (!$reflectionClass->isSubclassOf('Illuminate\Database\Eloquent\Model')) {
                         continue;
@@ -144,7 +146,9 @@ class ModelToOpenApiSchema extends ModelsCommand
                             continue;
                         }
 
-                        $TypeProperty = str_replace(['timestamp', 'date', 'datetime', 'int', 'bool', 'boolbool', '|'], ['string','string','string','integer', 'boolean', 'bool', ','], $TypeProperty);
+                        $TypeProperty = str_replace(
+                            ['timestamp', 'date', 'datetime', 'int', 'bool', 'boolbool', '|'],
+                            ['string', 'string', 'string', 'integer', 'boolean', 'bool', ','], $TypeProperty);
 
                         $_TypeProperty = $TypeProperty;
                         if (strpos($_TypeProperty, 'integer') !== false) {
@@ -178,7 +182,7 @@ class ModelToOpenApiSchema extends ModelsCommand
                     // $output .= $this->createPhpDocs($name);
                     $ignore[] = $name;
                     $this->nullableColumns = [];
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     $this->error('Exception: ' . $e->getMessage() .
                         "\nCould not analyze class ${name}.\n\nTrace:\n" .
                         $e->getTraceAsString());
