@@ -20,7 +20,7 @@ class ModelToOpenApiSchema extends ModelsCommand
      *
      * @var string
      */
-    protected $name = 'openapi:create-model-to-schema';
+    protected $name = 'openapi:create-model-to-schema {type}';
 
     /**
      * The console command description.
@@ -157,8 +157,12 @@ class ModelToOpenApiSchema extends ModelsCommand
                             $TypeProperty = '"string"';
                         } elseif (strpos($_TypeProperty, 'boolean') !== false) {
                             $TypeProperty = '"boolean"';
+                        } elseif (strpos($_TypeProperty, 'array') !== false) {
+                            $TypeProperty = '"array"';
+                        } elseif (strpos($_TypeProperty, 'Carbon') !== false) {
+                            $TypeProperty = '"string"';
                         } else {
-                            $TypeProperty = '"' . $TypeProperty . '"';
+                            $TypeProperty = '"any"';
                         }
 
                         if (strpos($_TypeProperty, 'null')) {
