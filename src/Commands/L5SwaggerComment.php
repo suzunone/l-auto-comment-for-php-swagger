@@ -35,6 +35,8 @@ class L5SwaggerComment extends Command
 
     protected $config_root = 'auto-comment-for-l5-swagger.documentations.';
 
+    protected $add_schema = "";
+
     /**
      * Execute the console command.
      *
@@ -73,6 +75,7 @@ COMMENT;
             }
         }
 
+        $comment .= $this->add_schema;
         $comment .= ' */';
 
         $stub = file_get_contents(__DIR__ . '/stubs/lg_swagger_controller.stub');
@@ -136,7 +139,7 @@ COMMENT;
         }
 
         $comment .= $this->makePathOption($route_item['uri']);
-        $comment .= $this->makeResponseTag($anntation);
+        $comment .= $this->makeResponseTag($anntation, $route_item['id']);
         $comment .= <<<'COMMENT'
  * )
  *
@@ -169,19 +172,68 @@ COMMENT;
         return $comment;
     }
 
-    public function makeResponseTag($anntation)
+    public function makeResponseTag($anntation, $id = null)
     {
         $comment = '';
         foreach ($anntation['openapi-response'] as $os_res) {
             $response = array_shift($os_res);
             $ref = array_shift($os_res);
             $description = implode(' ', $os_res);
-            $comment .= <<<COMMENT
+            // simple response
+            if (stripos($ref, '&') === false) {
+                $comment .= <<<COMMENT
  *     @OA\\Response(
  *         response="{$response}",
  *         description="{$description}",
  *         @OA\\JsonContent(ref="{$ref}")
  *     ),
+
+COMMENT;
+
+                continue;
+            }
+            parse_str($ref, $ref_arr);
+
+            $comment .= <<<COMMENT
+ *     @OA\\Response(
+ *         response="{$response}",
+ *         description="{$description}",
+ *         @OA\\JsonContent(ref="#/components/schemas/{$id}")
+ *     ),
+
+COMMENT;
+
+            // create add schema
+
+            $this->add_schema .= <<<COMMENT
+ * @OA\\Schema(
+ *   schema="{$id}",
+ *   type="object",
+ *   allOf={
+
+COMMENT;
+            foreach ($ref_arr as $key => $value) {
+                if ($value === '') {
+                    $this->add_schema .= <<<COMMENT
+ *     @OA\\Schema(ref="{$key}"),
+
+COMMENT;
+
+                    continue;
+                }
+
+                $this->add_schema .= <<<COMMENT
+ *     @OA\\Schema(
+ *         required={"{$key}"},
+ *         @OA\\Property(property="{$key}", ref="{$value}")
+ *     ),
+
+COMMENT;
+            }
+
+            $this->add_schema .= <<<'COMMENT'
+ *   }
+ * )
 
 COMMENT;
         }
@@ -342,7 +394,7 @@ Comment;
 
             return Str::studly(Str::snake($item));
         });
-        $id =  $uri->implode('');
+        $id = $uri->implode('');
 
         return [
             'domain' => $route->domain(),
@@ -428,7 +480,6 @@ Comment;
 
         foreach ($swagger_yaml_files as $file_name) {
             $data = \Symfony\Component\Yaml\Yaml::parse(file_get_contents($file_name));
-
 
             $swagit = new SwagIt(2, 2);
             $comment .= $swagit->convert($data);
