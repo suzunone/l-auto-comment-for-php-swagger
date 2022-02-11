@@ -334,7 +334,7 @@ Comment;
             $item = trim($item, '{}');
             $item = str_replace('.', '-', $item);
 
-            return Str::studly($item);
+            return Str::studly(Str::snake($item));
         });
         $id =  $uri->implode('');
 
