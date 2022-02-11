@@ -421,7 +421,8 @@ Comment;
         }
 
         foreach ($swagger_yaml_files as $file_name) {
-            $data = $data = \Symfony\Component\Yaml\Yaml::parse($file_name);
+            $data = \Symfony\Component\Yaml\Yaml::parse(file_get_contents($file_name));
+
 
             $swagit = new SwagIt(2, 2);
             $comment .= $swagit->convert($data);
