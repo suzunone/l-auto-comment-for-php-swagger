@@ -105,10 +105,12 @@ COMMENT;
 
         $description = $this->parseDescriotion($route_item['doc_comment']);
 
+        $operationId = strtolower($method) . $route_item['id'];
+
         $comment = <<<COMMENT
  * @OA\\{$method}(
  *     tags={"{$tags}"},
- *     operationId="{$route_item['id']}",
+ *     operationId="{$operationId}",
  *     path="/{$route_item['uri']}",
  *     description="{$description}",
  *
@@ -328,7 +330,7 @@ Comment;
         $action = '\\' . ltrim($route->getActionName(), '\\');
 
         if ($route->getName()) {
-            $id = strtolower($route->methods()) . Str::studly(str_replace('.', '-', $route->getName()));
+            $id = Str::studly(str_replace('.', '-', (string)$route->getName()));
         } else {
             $uri = collect(explode('/', trim($route->uri(), '/')));
             $uri->map(function ($item) {
@@ -337,7 +339,7 @@ Comment;
 
                 return Str::studly($item);
             });
-            $id = strtolower($route->methods()) . $uri->implode('');
+            $id =  $uri->implode('');
         }
 
         return [
