@@ -329,18 +329,14 @@ Comment;
     {
         $action = '\\' . ltrim($route->getActionName(), '\\');
 
-        if ($route->getName()) {
-            $id = Str::studly(str_replace('.', '-', (string)$route->getName()));
-        } else {
-            $uri = collect(explode('/', trim($route->uri(), '/')));
-            $uri->map(function ($item) {
-                $item = trim($item, '{}');
-                $item = str_replace('.', '-', $item);
+        $uri = collect(explode('/', trim($route->uri(), '/')));
+        $uri->map(function ($item) {
+            $item = trim($item, '{}');
+            $item = str_replace('.', '-', $item);
 
-                return Str::studly($item);
-            });
-            $id =  $uri->implode('');
-        }
+            return Str::studly($item);
+        });
+        $id =  $uri->implode('');
 
         return [
             'domain' => $route->domain(),
