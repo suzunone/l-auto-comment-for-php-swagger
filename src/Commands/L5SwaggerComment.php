@@ -205,38 +205,60 @@ COMMENT;
 
             // create add schema
 
-            $this->add_schema .= <<<COMMENT
+            $this->add_schema .= $this->createSchema($ref_arr, $id);
+        }
+
+        return $comment;
+    }
+
+    public function createSchema($ref_arr, $id = null)
+    {
+        if ($id === null) {
+            $comment = <<<'COMMENT'
+ * @OA\Schema(
+ *   type="object",
+ *   allOf={
+
+COMMENT;
+        } else {
+            $comment = <<<COMMENT
  * @OA\\Schema(
  *   schema="{$id}",
  *   type="object",
  *   allOf={
 
 COMMENT;
-            foreach ($ref_arr as $key => $value) {
-                if ($value === '') {
-                    $this->add_schema .= <<<COMMENT
+        }
+
+        foreach ($ref_arr as $key => $value) {
+            if ($value === '') {
+                $comment .= <<<COMMENT
  *     @OA\\Schema(ref="{$key}"),
 
 COMMENT;
 
-                    continue;
-                }
-
-                $this->add_schema .= <<<COMMENT
+                continue;
+            }
+            if (is_string($value)) {
+                $comment .= <<<COMMENT
  *     @OA\\Schema(
  *         required={"{$key}"},
  *         @OA\\Property(property="{$key}", ref="{$value}")
  *     ),
 
 COMMENT;
+
+                continue;
             }
 
-            $this->add_schema .= <<<'COMMENT'
+            $comment .= $this->createSchema($value);
+        }
+
+        $comment .= <<<'COMMENT'
  *   }
- * )
+ * ),
 
 COMMENT;
-        }
 
         return $comment;
     }
