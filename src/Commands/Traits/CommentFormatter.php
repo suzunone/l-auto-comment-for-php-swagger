@@ -34,8 +34,8 @@ trait CommentFormatter
             $comment = trim($comment);
             $before_indent = $indent;
 
-            $first_string = substr($comments, 0, 1);
-            $last_string = substr($comments, -1, 1);
+            $first_string = substr($comment, 0, 1);
+            $last_string = substr($comment, -1, 1);
             if ($last_string === '(') {
                 $indent++;
             }
