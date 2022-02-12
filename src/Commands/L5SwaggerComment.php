@@ -69,13 +69,15 @@ class L5SwaggerComment extends Command
 
 COMMENT;
 
+        $open_api_comment = '';
         foreach ($route as $route_item) {
             foreach ($route_item['methods'] as $method) {
-                $comment .= $this->getL5Comment($method, $route_item);
+                $open_api_comment .= $this->getL5Comment($method, $route_item);
             }
         }
 
-        $comment .= $this->add_schema;
+        $comment .= $this->commentFormatter($open_api_comment . $this->add_schema);
+
         $comment .= ' */';
 
         $stub = file_get_contents(__DIR__ . '/stubs/lg_swagger_controller.stub');
@@ -117,12 +119,12 @@ COMMENT;
         $operationId = strtolower($method) . $route_item['id'];
 
         $comment = <<<COMMENT
- * @OA\\{$method}(
- *     tags={"{$tags}"},
- *     operationId="{$operationId}",
- *     path="/{$route_item['uri']}",
- *     description="{$description}",
- *
+@OA\\{$method}(
+tags={"{$tags}"},
+operationId="{$operationId}",
+path="/{$route_item['uri']}",
+description="{$description}",
+
 
 COMMENT;
 
@@ -141,8 +143,8 @@ COMMENT;
         $comment .= $this->makePathOption($route_item['uri']);
         $comment .= $this->makeResponseTag($anntation, $route_item['id']);
         $comment .= <<<'COMMENT'
- * )
- *
+)
+
 
 COMMENT;
 
@@ -155,16 +157,16 @@ COMMENT;
         $comment = '';
         foreach ($match[1] as $path) {
             $comment .= <<<COMMENT
- *     @OA\\Parameter(
- *         name="{$path}",
- *         description="{$path}_id",
- *         @OA\\Schema(
- *             format="int64",
- *             type="integer"
- *         ),
- *         in="path",
- *         required=true
- *     ),
+@OA\\Parameter(
+name="{$path}",
+description="{$path}_id",
+@OA\\Schema(
+format="int64",
+type="integer"
+),
+in="path",
+required=true
+),
 
 COMMENT;
         }
@@ -182,11 +184,11 @@ COMMENT;
             // simple response
             if (stripos($ref, '&') === false) {
                 $comment .= <<<COMMENT
- *     @OA\\Response(
- *         response="{$response}",
- *         description="{$description}",
- *         @OA\\JsonContent(ref="{$ref}")
- *     ),
+@OA\\Response(
+response="{$response}",
+description="{$description}",
+@OA\\JsonContent(ref="{$ref}")
+),
 
 COMMENT;
 
@@ -194,46 +196,39 @@ COMMENT;
             }
             parse_str($ref, $ref_arr);
 
+            $schema = $id . $response;
+
             $comment .= <<<COMMENT
- *     @OA\\Response(
- *         response="{$response}",
- *         description="{$description}",
- *         @OA\\JsonContent(ref="#/components/schemas/{$id}")
- *     ),
+@OA\\Response(
+response="{$response}",
+description="{$description}",
+@OA\\JsonContent(ref="#/components/schemas/{$schema}")
+),
 
 COMMENT;
 
             // create add schema
-
-            $this->add_schema .= $this->createSchema($ref_arr, $id);
+            $this->add_schema .= $this->createSchema($ref_arr, $schema);
         }
 
         return $comment;
     }
 
-    public function createSchema($ref_arr, $id = null)
+    public function createSchema($ref_arr, $id)
     {
-        if ($id === null) {
-            $comment = <<<'COMMENT'
- * @OA\Schema(
- *   type="object",
- *   allOf={
+        $sub_comment = '';
+        $comment = <<<COMMENT
+@OA\\Schema(
+schema="{$id}",
+type="object",
+allOf={
 
 COMMENT;
-        } else {
-            $comment = <<<COMMENT
- * @OA\\Schema(
- *   schema="{$id}",
- *   type="object",
- *   allOf={
-
-COMMENT;
-        }
 
         foreach ($ref_arr as $key => $value) {
             if ($value === '') {
                 $comment .= <<<COMMENT
- *     @OA\\Schema(ref="{$key}"),
+@OA\\Schema(ref="{$key}"),
 
 COMMENT;
 
@@ -241,26 +236,35 @@ COMMENT;
             }
             if (is_string($value)) {
                 $comment .= <<<COMMENT
- *     @OA\\Schema(
- *         required={"{$key}"},
- *         @OA\\Property(property="{$key}", ref="{$value}")
- *     ),
+@OA\\Schema(
+required={"{$key}"},
+@OA\\Property(property="{$key}", ref="{$value}")
+),
 
 COMMENT;
 
                 continue;
             }
 
-            $comment .= $this->createSchema($value);
-        }
-
-        $comment .= <<<'COMMENT'
- *   }
- * ),
+            $sub_schema = $id . $key;
+            $comment .= <<<COMMENT
+@OA\\Schema(
+required={"{$key}"},
+@OA\\Property(property="{$key}", ref="#/components/schemas/{$sub_schema}")
+),
 
 COMMENT;
 
-        return $comment;
+            $sub_comment .= $this->createSchema($value, $sub_schema);
+        }
+
+        $comment .= <<<'COMMENT'
+}
+),
+
+COMMENT;
+
+        return $comment . $sub_comment;
     }
 
     public function parseDescriotion($doc_comment)
@@ -318,20 +322,64 @@ COMMENT;
             }
 
             $comment .= <<<COMMENT
- *     @OA\\Parameter(
- *         name="{$match[3][$key]}",
- *         description="{$match[4][$key]}",
- *         @OA\\Schema(
- *             {$format}
- *         ),
- *         in="query",
- *         required={$required}
- *     ),
+@OA\\Parameter(
+name="{$match[3][$key]}",
+description="{$match[4][$key]}",
+@OA\\Schema(
+{$format}
+),
+in="query",
+required={$required}
+),
 
 COMMENT;
         }
 
         return $comment;
+    }
+
+    /**
+     * pretty format annotation comment
+     * @param string $format_comment
+     * @param int $width
+     * @return string
+     */
+    public function commentFormatter(string $format_comment, int $width = 2)
+    {
+        $indent = 0;
+        $comments = explode("\n", $format_comment);
+        foreach ($comments as $key => $comment) {
+            $before_indent = $indent;
+
+            if (substr($comment, -1, 1) === '(') {
+                $indent++;
+            }
+            if (substr($comment, 0, 1) === ')') {
+                $indent--;
+            }
+            if (substr($comment, -1, 1) === '{') {
+                $indent++;
+            }
+            if (substr($comment, 0, 1) === '}') {
+                $indent--;
+            }
+
+            $indent = max(0, $indent);
+            $space = '';
+            if ($before_indent > $indent) {
+                if ($indent > 0) {
+                    $space =  str_repeat(' ', $indent * $width);
+                }
+            } else {
+                if ($before_indent > 0) {
+                    $space = str_repeat(' ', $before_indent * $width);
+                }
+            }
+
+            $comments[$key] = rtrim(' * ' . $space . $comment);
+        }
+
+        return implode("\n", $comments);
     }
 
     /**
@@ -360,38 +408,38 @@ COMMENT;
         $comment = '';
         if (!$ignore_session_cookie) {
             $comment .= <<<Comment
- *      @OA\\Parameter(
- *          name="{$cookie_name}",
- *          description="session cookie",
- *          @OA\\Schema(
- *              format="string"
- *          ),
- *          in="cookie",
- *          required=false
- *      ),
+@OA\\Parameter(
+name="{$cookie_name}",
+description="session cookie",
+@OA\\Schema(
+format="string"
+),
+in="cookie",
+required=false
+),
 
 Comment;
         }
         if (!$ignore_csrf_cookie) {
             $comment .= <<<'Comment'
- *      @OA\Parameter(
- *          name="X-CSRF-TOKEN",
- *          description="CSRF-TOKEN",
- *          @OA\Schema(
- *              format="string"
- *          ),
- *          in="header",
- *          required=false
- *      ),
- *      @OA\Parameter(
- *          name="X-XSRF-TOKEN",
- *          description="CSRF-TOKEN",
- *          @OA\Schema(
- *              format="string"
- *          ),
- *          in="header",
- *          required=false
- *      ),
+@OA\Parameter(
+name="X-CSRF-TOKEN",
+description="CSRF-TOKEN",
+@OA\Schema(
+format="string"
+),
+in="header",
+required=false
+),
+@OA\Parameter(
+name="X-XSRF-TOKEN",
+description="CSRF-TOKEN",
+@OA\Schema(
+format="string"
+),
+in="header",
+required=false
+),
 
 Comment;
         }
@@ -410,7 +458,7 @@ Comment;
         $action = '\\' . ltrim($route->getActionName(), '\\');
 
         $uri = collect(explode('/', trim($route->uri(), '/')));
-        $uri->map(function ($item) {
+        $uri = $uri->map(function ($item) {
             $item = trim($item, '{}');
             $item = str_replace('.', '-', $item);
 
@@ -488,6 +536,12 @@ Comment;
         })->implode("\n");
     }
 
+    /**
+     * json and yaml to comment
+     *
+     * @throws \JsonException
+     * @return string
+     */
     protected function templateToComment()
     {
         $swagger_json_files = $this->laravel['config']->get($this->config_root . 'swagger_json_files', []);
