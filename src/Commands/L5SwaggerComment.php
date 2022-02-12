@@ -7,16 +7,20 @@
 
 namespace AutoCommentForL5Swagger\Commands;
 
+use App\Http\Controllers\L5Swagger\OpenApiDoc;
+use AutoCommentForL5Swagger\Commands\Traits\CommentFormatter;
 use AutoCommentForL5Swagger\Libs\SwagIt;
-use function collect;
+use Closure;
 use Illuminate\Console\Command;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Str;
-use function optional;
+use ReflectionClass;
+use Symfony\Component\Yaml\Yaml;
 
 class L5SwaggerComment extends Command
 {
+    use CommentFormatter;
     /**
      * The name and signature of the console command.
      *
@@ -40,14 +44,16 @@ class L5SwaggerComment extends Command
     /**
      * Execute the console command.
      *
-     * @throws \ReflectionException
+     * @param \Illuminate\Routing\Router $Router
      * @return int
+     * @throws \JsonException
+     * @throws \ReflectionException
      */
     public function handle(Router $Router)
     {
         $type = $this->argument('type') ?? 'default';
         $this->config_root .= $type . '.';
-        $OpenApiDoc = $this->laravel['config']->get($this->config_root . 'ControllerName', \App\Http\Controllers\L5Swagger\OpenApiDoc::class);
+        $OpenApiDoc = $this->laravel['config']->get($this->config_root . 'ControllerName', OpenApiDoc::class);
 
         // $this->call('make:controller', ['name' => 'L5Swagger/OpenApiDoc']);
         if (!class_exists($OpenApiDoc)) {
@@ -56,7 +62,7 @@ class L5SwaggerComment extends Command
             return -1;
         }
 
-        $OpenApiDocRef = new \ReflectionClass(new $OpenApiDoc);
+        $OpenApiDocRef = new ReflectionClass(new $OpenApiDoc);
         $namespace = $OpenApiDocRef->getNamespaceName();
 
         $this->router = $Router;
@@ -82,31 +88,34 @@ COMMENT;
 
         $stub = file_get_contents(__DIR__ . '/stubs/lg_swagger_controller.stub');
 
-        $stub = str_replace('// OpenApiDoc //', $comment, $stub);
-        $stub = str_replace('__Namespaces__', $namespace, $stub);
+        $stub = str_replace(['// OpenApiDoc //', '__Namespaces__'], [$comment, $namespace], $stub);
 
-        file_put_contents((new \ReflectionClass($OpenApiDoc))->getFileName(), $stub);
+        file_put_contents((new ReflectionClass($OpenApiDoc))->getFileName(), $stub);
     }
 
-    public function getL5Comment($method, $route_item)
+    /**
+     * @param string $method
+     * @param array $route_item
+     * @return string
+     */
+    public function getL5Comment(string $method, array $route_item): string
     {
-        $method = \Str::studly(strtolower($method));
+        $method = Str::studly(strtolower($method));
 
-        $anntation = $this->parseAnnotation($route_item['doc_comment']);
-        if (!count($anntation)) {
+        $annotation = $this->parseAnnotation($route_item['doc_comment']);
+        if (!count($annotation)) {
             return '';
         }
 
-        $rote_names = explode('.', $route_item['name']);
         $action = explode('@', $route_item['action'])[0];
         $action = str_replace(["\\App\\Http\\Controllers", 'Controller'], '', $action);
         $action = trim($action, "\\");
 
         $tags = explode("\\", $action);
 
-        if (isset($anntation['openapi-tags'])) {
+        if (isset($annotation['openapi-tags'])) {
             $tags = [];
-            foreach ($anntation['openapi-tags'] as $item) {
+            foreach ($annotation['openapi-tags'] as $item) {
                 /** @noinspection SlowArrayOperationsInLoopInspection */
                 $tags = array_merge($tags, $item);
             }
@@ -114,7 +123,7 @@ COMMENT;
 
         $tags = implode('","', $tags);
 
-        $description = $this->parseDescriotion($route_item['doc_comment']);
+        $description = $this->parseDescription($route_item['doc_comment']);
 
         $operationId = strtolower($method) . $route_item['id'];
 
@@ -128,9 +137,9 @@ description="{$description}",
 
 COMMENT;
 
-        if (!isset($anntation['openapi-ignore-cookie'])) {
-            $cookie_name = $anntation['openapi-cookie'][0][0] ?? $this->laravel['config']->get($this->config_root . 'session_cookie_name', 'session_cookie');
-            $comment .= $this->getCookie($cookie_name, isset($anntation['openapi-ignore-session-cookie']), isset($anntation['openapi-ignore-csrf-cookie']));
+        if (!isset($annotation['openapi-ignore-cookie'])) {
+            $cookie_name = $annotation['openapi-cookie'][0][0] ?? $this->laravel['config']->get($this->config_root . 'session_cookie_name', 'session_cookie');
+            $comment .= $this->getCookie($cookie_name, isset($annotation['openapi-ignore-session-cookie']), isset($annotation['openapi-ignore-csrf-cookie']));
         }
 
         foreach ($route_item['attributes'] as $attribute) {
@@ -141,7 +150,7 @@ COMMENT;
         }
 
         $comment .= $this->makePathOption($route_item['uri']);
-        $comment .= $this->makeResponseTag($anntation, $route_item['id']);
+        $comment .= $this->makeResponseTag($annotation, $route_item['id']);
         $comment .= <<<'COMMENT'
 )
 
@@ -151,7 +160,11 @@ COMMENT;
         return $comment;
     }
 
-    public function makePathOption($url)
+    /**
+     * @param string $url
+     * @return string
+     */
+    public function makePathOption(string $url): string
     {
         preg_match_all('/\{([^}]*)\}/u', $url, $match);
         $comment = '';
@@ -174,10 +187,15 @@ COMMENT;
         return $comment;
     }
 
-    public function makeResponseTag($anntation, $id = null)
+    /**
+     * @param array $annotation
+     * @param string|null $id
+     * @return string
+     */
+    public function makeResponseTag(array $annotation, ?string $id = null):string
     {
         $comment = '';
-        foreach ($anntation['openapi-response'] as $os_res) {
+        foreach ($annotation['openapi-response'] as $os_res) {
             $response = array_shift($os_res);
             $ref = array_shift($os_res);
             $description = implode(' ', $os_res);
@@ -214,7 +232,12 @@ COMMENT;
         return $comment;
     }
 
-    public function createSchema($ref_arr, $id)
+    /**
+     * @param array $ref_arr
+     * @param string|null $id
+     * @return string
+     */
+    public function createSchema(array $ref_arr, ?string $id):string
     {
         $sub_comment = '';
         $comment = <<<COMMENT
@@ -267,7 +290,11 @@ COMMENT;
         return $comment . $sub_comment;
     }
 
-    public function parseDescriotion($doc_comment)
+    /**
+     * @param string $doc_comment
+     * @return string
+     */
+    public function parseDescription(string $doc_comment): string
     {
         preg_match_all('/^\/\*\*([^@]+)/u', $doc_comment, $match);
 
@@ -279,7 +306,11 @@ COMMENT;
         return trim($match);
     }
 
-    public function parseAnnotation($doc_comment)
+    /**
+     * @param string $doc_comment
+     * @return array
+     */
+    public function parseAnnotation(string $doc_comment): array
     {
         $doc_comment = mb_ereg_replace(' +', ' ', $doc_comment);
 
@@ -295,15 +326,19 @@ COMMENT;
         return $res;
     }
 
-    public function formRequestToComment($class_name)
+    /**
+     * @param string $class_name
+     * @return string
+     */
+    public function formRequestToComment(string $class_name): string
     {
         if (!class_exists($class_name)) {
             $this->error($class_name . 'is not found');
 
-            return;
+            return '';
         }
 
-        $reflection = new \ReflectionClass($class_name);
+        $reflection = new ReflectionClass($class_name);
 
         preg_match_all('/@property(-read)? +([^ ]+) +[$]?([^ ]+) +(.*)/', $reflection->getDocComment(), $match);
 
@@ -338,56 +373,13 @@ COMMENT;
         return $comment;
     }
 
-    /**
-     * pretty format annotation comment
-     * @param string $format_comment
-     * @param int $width
-     * @return string
-     */
-    public function commentFormatter(string $format_comment, int $width = 2)
-    {
-        $indent = 0;
-        $comments = explode("\n", $format_comment);
-        foreach ($comments as $key => $comment) {
-            $before_indent = $indent;
-
-            if (substr($comment, -1, 1) === '(') {
-                $indent++;
-            }
-            if (substr($comment, 0, 1) === ')') {
-                $indent--;
-            }
-            if (substr($comment, -1, 1) === '{') {
-                $indent++;
-            }
-            if (substr($comment, 0, 1) === '}') {
-                $indent--;
-            }
-
-            $indent = max(0, $indent);
-            $space = '';
-            if ($before_indent > $indent) {
-                if ($indent > 0) {
-                    $space =  str_repeat(' ', $indent * $width);
-                }
-            } else {
-                if ($before_indent > 0) {
-                    $space = str_repeat(' ', $before_indent * $width);
-                }
-            }
-
-            $comments[$key] = rtrim(' * ' . $space . $comment);
-        }
-
-        return implode("\n", $comments);
-    }
 
     /**
      * Compile the routes into a displayable format.
      *
      * @return array
      */
-    protected function getRoutes()
+    protected function getRoutes(): array
     {
         $ignored_route_names = $this->laravel['config']->get($this->config_root . 'ignored_route_names', []);
         $enabled_route_names = $this->laravel['config']->get($this->config_root . 'enabled_route_names', []);
@@ -403,7 +395,7 @@ COMMENT;
         })->all();
     }
 
-    protected function getCookie($cookie_name = 'session_cookie', $ignore_session_cookie = false, $ignore_csrf_cookie = false)
+    protected function getCookie($cookie_name = 'session_cookie', $ignore_session_cookie = false, $ignore_csrf_cookie = false): string
     {
         $comment = '';
         if (!$ignore_session_cookie) {
@@ -452,8 +444,9 @@ Comment;
      *
      * @param \Illuminate\Routing\Route $route
      * @return array
+     * @throws \ReflectionException
      */
-    protected function getRouteInformation(Route $route)
+    protected function getRouteInformation(Route $route): array
     {
         $action = '\\' . ltrim($route->getActionName(), '\\');
 
@@ -479,7 +472,12 @@ Comment;
         ];
     }
 
-    protected function getAttributesByAction(string $action)
+    /**
+     * @param string $action
+     * @return array|\ReflectionParameter[]
+     * @throws \ReflectionException
+     */
+    protected function getAttributesByAction(string $action): array
     {
         if (!strpos($action, '@')) {
             return [];
@@ -489,10 +487,10 @@ Comment;
         if (!class_exists($class)) {
             $this->error($class . 'is not found');
 
-            return;
+            return [];
         }
 
-        $refClas = new \ReflectionClass(\App::make($class));
+        $refClas = new ReflectionClass(\App::make($class));
 
         $attribute = $refClas->hasMethod($method) ? $refClas->getMethod($method)->getParameters() : [];
         foreach ($attribute as $key => $property) {
@@ -505,7 +503,12 @@ Comment;
         return $attribute;
     }
 
-    protected function getDocCommentByAction(string $action)
+    /**
+     * @param string $action
+     * @return string
+     * @throws \ReflectionException
+     */
+    protected function getDocCommentByAction(string $action): string
     {
         if (!strpos($action, '@')) {
             return '';
@@ -515,10 +518,10 @@ Comment;
         if (!class_exists($class)) {
             $this->error($class . 'is not found');
 
-            return;
+            return '';
         }
 
-        $refClas = new \ReflectionClass(\App::make($class));
+        $refClas = new ReflectionClass(\App::make($class));
 
         return $refClas->hasMethod($method) ? $refClas->getMethod($method)->getDocComment() : '';
     }
@@ -529,10 +532,10 @@ Comment;
      * @param \Illuminate\Routing\Route $route
      * @return string
      */
-    protected function getMiddleware($route)
+    protected function getMiddleware($route): string
     {
         return collect($this->router->gatherRouteMiddleware($route))->map(function ($middleware) {
-            return $middleware instanceof \Closure ? 'Closure' : $middleware;
+            return $middleware instanceof Closure ? 'Closure' : $middleware;
         })->implode("\n");
     }
 
@@ -542,7 +545,7 @@ Comment;
      * @throws \JsonException
      * @return string
      */
-    protected function templateToComment()
+    protected function templateToComment(): string
     {
         $swagger_json_files = $this->laravel['config']->get($this->config_root . 'swagger_json_files', []);
         $swagger_yaml_files = $this->laravel['config']->get($this->config_root . 'swagger_yaml_files', []);
@@ -555,7 +558,7 @@ Comment;
         }
 
         foreach ($swagger_yaml_files as $file_name) {
-            $data = \Symfony\Component\Yaml\Yaml::parse(file_get_contents($file_name));
+            $data = Yaml::parse(file_get_contents($file_name));
 
             $swagit = new SwagIt(2, 2);
             $comment .= $swagit->convert($data);
