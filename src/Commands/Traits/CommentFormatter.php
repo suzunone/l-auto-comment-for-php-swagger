@@ -34,16 +34,18 @@ trait CommentFormatter
             $comment = trim($comment);
             $before_indent = $indent;
 
-            if ($comment[strlen($comment) - 1] === '(') {
+            $first_string = substr($comments, 0, 1);
+            $last_string = substr($comments, -1, 1);
+            if ($last_string === '(') {
                 $indent++;
             }
-            if ($comment[0] === ')') {
+            if ($first_string === ')') {
                 $indent--;
             }
-            if ($comment[strlen($comment) - 1] === '{') {
+            if ($last_string === '{') {
                 $indent++;
             }
-            if ($comment[0] === '}') {
+            if ($first_string === '}') {
                 $indent--;
             }
 
