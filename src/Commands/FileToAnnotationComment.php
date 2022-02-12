@@ -24,7 +24,7 @@ class FileToAnnotationComment extends Command
      *
      * @var string
      */
-    protected $description = 'yamlやjsonからコメント定義を作成する';
+    protected $description = 'Create a comment definition from yaml or json';
 
     /**
      * Execute the console command.

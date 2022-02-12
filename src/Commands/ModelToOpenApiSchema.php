@@ -20,14 +20,14 @@ class ModelToOpenApiSchema extends ModelsCommand
      *
      * @var string
      */
-    protected $name = 'openapi:create-model-to-schema {type}';
+    protected $signature = 'openapi:create-model-to-schema {type? : Config type to be used}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Create open api schema file for models';
+    protected $description = 'Create PHPSwagger schema file for models';
 
     protected $config_root = 'auto-comment-for-l5-swagger.documentations.';
 
@@ -43,6 +43,11 @@ class ModelToOpenApiSchema extends ModelsCommand
         $type = $this->argument('type') ?? 'default';
         $this->config_root .= $type . '.';
         $this->schema_path = $this->laravel['config']->get($this->config_root . 'schema_path', $path = $this->laravel['path'] . '/Schemas/');
+
+        if (!is_dir($this->schema_path)) {
+            $this->error('Please create dir.:'.$this->schema_path);
+            return;
+        }
 
         $this->input->setOption('write', true);
 

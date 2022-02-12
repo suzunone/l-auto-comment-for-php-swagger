@@ -1,30 +1,32 @@
 {
-    "name": "suzunone/auto-comment-for-l5-swagger",
-    "description": "auto-comment-for-l5-swagger",
-    "type": "library",
-    "require": {
-        "darkaonline/l5-swagger": "^8.1",
-        "barryvdh/laravel-ide-helper": "^2.11",
-      "ext-mbstring": "*",
-        "ext-json": "*"
-    },
-    "license": "MIT",
-    "autoload": {
-        "psr-4": {
-            "AutoCommentForL5Swagger\\": "src/"
-        }
-    },
-    "authors": [
-        {
-            "name": "suzunone",
-            "email": "suzunone.eleven@gmail.com"
-        }
-    ],
-    "extra": {
-        "laravel": {
-            "providers": [
-                "AutoCommentForL5Swagger\\AutoCommentForL5SwaggerServiceProvider"
-            ]
-        }
+  "name": "suzunone/auto-comment-for-l5-swagger",
+  "description": "Automatically generate PHP Swagger comments from Laravel's Controller, Model, and form requests.",
+  "type": "library",
+  "require": {
+    "barryvdh/laravel-ide-helper": "^2.11",
+    "ext-mbstring": "*",
+    "ext-json": "*"
+  },
+  "require-dev": {
+    "darkaonline/l5-swagger": "^8.1"
+  },
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "AutoCommentForL5Swagger\\": "src/"
     }
+  },
+  "authors": [
+    {
+      "name": "suzunone",
+      "email": "suzunone.eleven@gmail.com"
+    }
+  ],
+  "extra": {
+    "laravel": {
+      "providers": [
+        "AutoCommentForL5Swagger\\AutoCommentForL5SwaggerServiceProvider"
+      ]
+    }
+  }
 }

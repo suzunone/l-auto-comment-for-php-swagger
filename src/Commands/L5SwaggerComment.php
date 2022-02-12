@@ -22,14 +22,14 @@ class L5SwaggerComment extends Command
      *
      * @var string
      */
-    protected $signature = 'openapi:l5-swagger-comment {type?}';
+    protected $signature = 'openapi:l5-swagger-comment {type? : Config type to be used}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'l5 swagger用のコメントを自動生成する';
+    protected $description = 'Automatically generate comments for PHPSwagger';
 
     protected $router;
 
