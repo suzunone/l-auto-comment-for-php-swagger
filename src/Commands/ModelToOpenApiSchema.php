@@ -191,7 +191,8 @@ class ModelToOpenApiSchema extends ModelsCommand
                             $TypeProperty .= ',nullable=true';
                         }
 
-                        $explain = (array)$model->explain;
+                        $api_example_property_name = $this->laravel['config']->get($this->config_root . 'api_example_property_name', 'api_example_property_name');
+                        $example = (array)$model->$api_example_property_name;
                         $OARequired[] = '"' . $VariableName . '"';
 
                         if ($model->incrementing && $model->getKeyName() === $VariableName) {
@@ -200,7 +201,7 @@ class ModelToOpenApiSchema extends ModelsCommand
                             continue;
                         }
 
-                        $properties_doc_comment = $this->createPropertyAnnotation($VariableName, $TypeProperty, $property['comment'], array_key_exists($VariableName, $explain) ? $explain[$VariableName] : new EmptyExample());
+                        $properties_doc_comment = $this->createPropertyAnnotation($VariableName, $TypeProperty, $property['comment'], array_key_exists($VariableName, $example) ? $example[$VariableName] : new EmptyExample());
                         $properties_doc_comments .= $properties_doc_comment;
                         $properties .= str_replace(['DOC_COMMENT', 'VariableName'], [trim('@var ' . $property['type']), $VariableName], file_get_contents($this->getStub('oa_property')));
                     }
