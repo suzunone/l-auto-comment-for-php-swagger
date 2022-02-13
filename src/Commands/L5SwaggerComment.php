@@ -346,9 +346,7 @@ COMMENT;
         foreach ($match[2] as $key => $value) {
             $property = preg_split('/ +/', trim($value), 3);
             $property[1] = ltrim($property[1], '$');
-            $property[2] = $property[2] ?? $property[1];
-
-            dump($property);
+            $property[2] = $property[2] ?? $property[1];g
 
             $required = strpos($property[0], 'null') !== false ? 'false' : 'true';
             $format = 'format="any"';
@@ -365,7 +363,6 @@ COMMENT;
             } elseif (strpos($property[0], 'double') !== false) {
                 $format = 'type="numper"';
             }
-            dump($format);
 
             $comment .= <<<COMMENT
 @OA\\Parameter(
