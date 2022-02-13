@@ -38,6 +38,9 @@ class ModelToOpenApiSchema extends ModelsCommand
 
     protected $schema_path = '';
 
+    protected $write_model_magic_where = true;
+    protected $write_model_relation_count_properties = true;
+
     /**
      * Execute the console command.
      *
@@ -55,9 +58,34 @@ class ModelToOpenApiSchema extends ModelsCommand
             return -1;
         }
 
-        $this->input->setOption('write', true);
+        $this->filename = $this->laravel['config']->get($this->config_root . 'schemas_filename', $path = $this->laravel['path'] . '/Schemas/OpenApiSchemasDoc.php');
+        $this->filename = $this->option('filename') ?? $this->filename;
 
-        return parent::handle();
+        $model = $this->argument('model');
+        $ignore = $this->option('ignore');
+
+        $this->dirs = array_merge(
+            $this->laravel['config']->get($this->config_root . 'model_locations', []),
+            $this->option('dir')
+        );
+
+        $this->dateClass = class_exists(\Illuminate\Support\Facades\Date::class)
+            ? '\\' . get_class(\Illuminate\Support\Facades\Date::now())
+            : '\Illuminate\Support\Carbon';
+
+        $content = $this->generateDocs($model, $ignore);
+
+        if ($this->filename) {
+            $content = $this->commentFormatter($content);
+            $schema = file_get_contents($this->getStub('oa_schemas'));
+            $schema = str_replace(
+                [ '__Namespaces__', 'OPEN_API_SCHEMAS_ANNOTATION',],
+                [$this->laravel['config']->get($this->config_root . 'schema_name_space'), $content],
+                $schema
+            );
+
+            file_put_contents($this->filename, $schema);
+        }
     }
 
     /**
@@ -192,7 +220,7 @@ class ModelToOpenApiSchema extends ModelsCommand
                         }
 
                         $api_example_property_name = $this->laravel['config']->get($this->config_root . 'api_example_property_name', 'api_example_property_name');
-                        $example = (array)$model->$api_example_property_name;
+                        $example = (array)$model->{$api_example_property_name};
                         $OARequired[] = '"' . $VariableName . '"';
 
                         if ($model->incrementing && $model->getKeyName() === $VariableName) {
@@ -218,7 +246,15 @@ class ModelToOpenApiSchema extends ModelsCommand
                         $schema
                     );
 
-                    file_put_contents($path . $reflectionClass->getShortName() . '.php', $schema);
+                    if ($this->filename === null) {
+                        $file_path = $path . $reflectionClass->getShortName() . '.php';
+                        $this->info('write:' . $file_path);
+
+                        file_put_contents($file_path, $schema);
+                    }
+
+                    $output .= $MainClassAnnotation;
+                    $output .= $ListClassAnnotation;
 
                     // $output .= $this->createPhpDocs($name);
                     $ignore[] = $name;
@@ -252,8 +288,29 @@ class ModelToOpenApiSchema extends ModelsCommand
             [
                 ['type', InputArgument::OPTIONAL, 'Config type to be used', 'default'],
             ],
-            parent::getArguments(),
+            parent::getArguments()
         );
+    }
+
+    protected function getOptions()
+    {
+        return [
+            ['filename', 'F', InputOption::VALUE_OPTIONAL, 'The path to the helper file'],
+            ['ignore', 'I', InputOption::VALUE_OPTIONAL, 'Which models to ignore', ''],
+            ['dir', 'D', InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY,
+                'The model dir, supports glob patterns', [], ],
+        ];
+        /*
+        $res = parent::getOptions();
+        foreach ($res as $key => &$item) {
+            switch ($item[0]) {
+                default:
+                    $item[3] = 'Unavailable options';
+            }
+        }
+
+        return $res;
+        */
     }
 
     protected function createPropertyAnnotation(string $name, string $TypeProperty, string $TypeDescription, $example): string
@@ -374,6 +431,7 @@ COMMENT;
          ref="#/components/schemas/{$schema_name}"
      )
 )
+
 COMMENT;
 
         return $comment;

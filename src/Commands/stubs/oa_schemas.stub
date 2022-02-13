@@ -1,0 +1,16 @@
+<?php
+
+/**
+ * This file is part of auto-comment-for-l5-swagger
+ *
+ */
+
+namespace __Namespaces__;
+
+/**
+OPEN_API_SCHEMAS_ANNOTATION
+ */
+class OpenApiSchemasDoc
+{
+
+}

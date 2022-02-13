@@ -340,26 +340,37 @@ COMMENT;
 
         $reflection = new ReflectionClass($class_name);
 
-        preg_match_all('/@property(-read)? +([^ ]+) +[$]?([^ ]+) +(.*)/', $reflection->getDocComment(), $match);
+        preg_match_all('/@property(-read)? (.*)/', $reflection->getDocComment(), $match);
 
         $comment = '';
-        foreach ($match[0] as $key => $value) {
-            $required = strpos($match[2][$key], 'null') !== false ? 'false' : 'true';
+        foreach ($match[2] as $key => $value) {
+            $property = preg_split('/ +/', trim($value), 3);
+            $property[1] = ltrim($property[1], '$');
+            $property[2] = $property[2] ?? $property[1];
+
+            dump($property);
+
+            $required = strpos($property[0], 'null') !== false ? 'false' : 'true';
             $format = 'format="any"';
-            if (strpos($match[2][$key], 'int') !== false) {
+            if (strpos($property[0], 'int') !== false) {
                 $format = 'format="int64",type="integer"';
-            } elseif (strpos($match[2][$key], 'bool') !== false) {
-                $format = 'format="boolean"';
-            } elseif (strpos($match[2][$key], 'boolean') !== false) {
-                $format = 'format="boolean"';
-            } elseif (strpos($match[2][$key], 'string') !== false) {
-                $format = 'format="string"';
+            } elseif (strpos($property[0], 'bool') !== false) {
+                $format = 'type="boolean"';
+            } elseif (strpos($property[0], 'boolean') !== false) {
+                $format = 'type="boolean"';
+            } elseif (strpos($property[0], 'string') !== false) {
+                $format = 'type="string"';
+            } elseif (strpos($property[0], 'float') !== false) {
+                $format = 'type="numper"';
+            } elseif (strpos($property[0], 'double') !== false) {
+                $format = 'type="numper"';
             }
+            dump($format);
 
             $comment .= <<<COMMENT
 @OA\\Parameter(
-name="{$match[3][$key]}",
-description="{$match[4][$key]}",
+name="{$property[1]}",
+description="{$property[2]}",
 @OA\\Schema(
 {$format}
 ),

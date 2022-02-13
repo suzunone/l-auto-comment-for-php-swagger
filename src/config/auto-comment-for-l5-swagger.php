@@ -12,6 +12,35 @@ return [
         'default' => [
             /*
             |--------------------------------------------------------------------------
+            | Model locations to include
+            |--------------------------------------------------------------------------
+            |
+            | Define in which directories the ide-helper:models command should look
+            | for models.
+            |
+            | glob patterns are supported to easier reach models in sub-directories,
+            | e.g. `app/Services/* /Models` (without the space)
+            |
+            */
+
+            'model_locations' => [
+                'app',
+            ],
+
+            /*
+            |--------------------------------------------------------------------------
+            | Schemas filename
+            |--------------------------------------------------------------------------
+            |
+            | The default filename for the coherent Schema file.
+            | If null, it is the same as the Model name.
+            |
+            */
+
+            'schemas_filename' => null,
+
+            /*
+            |--------------------------------------------------------------------------
             | Session Cookie Name
             |--------------------------------------------------------------------------
             |
