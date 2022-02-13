@@ -1,7 +1,7 @@
 <?php
 
 $header = <<<'EOF'
-This file is part of auto-comment-for-l5-swagger
+This file is part of l-auto-comment-for-php-swagger
 
 EOF;
 

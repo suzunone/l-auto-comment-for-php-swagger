@@ -1,15 +1,15 @@
 <?php
 
 /**
- * This file is part of auto-comment-for-php-swagger
+ * This file is part of l-auto-comment-for-php-swagger
  *
  */
 
 namespace AutoCommentForPHPSwagger;
 
 use AutoCommentForPHPSwagger\Commands\FileToAnnotationComment;
-use AutoCommentForPHPSwagger\Commands\SwaggerComment;
 use AutoCommentForPHPSwagger\Commands\ModelToOpenApiSchema;
+use AutoCommentForPHPSwagger\Commands\SwaggerComment;
 use Illuminate\Support\ServiceProvider;
 
 class LAutoCommentForPHPSwaggerServiceProvider extends ServiceProvider

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * This file is part of auto-comment-for-php-swagger
+ * This file is part of l-auto-comment-for-php-swagger
  *
  */
 
@@ -347,7 +347,6 @@ COMMENT;
             $property = preg_split('/ +/', trim($value), 3);
             $property[1] = ltrim($property[1], '$');
             $property[2] = $property[2] ?? $property[1];
-
 
             $required = strpos($property[0], 'null') !== false ? 'false' : 'true';
             $format = 'format="any"';

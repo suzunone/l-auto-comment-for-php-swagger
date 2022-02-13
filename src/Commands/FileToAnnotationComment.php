@@ -1,7 +1,7 @@
 <?php
 
 /**
- * This file is part of auto-comment-for-php-swagger
+ * This file is part of l-auto-comment-for-php-swagger
  *
  */
 
