@@ -1,13 +1,13 @@
 <?php
 
 /**
- * This file is part of auto-comment-for-l5-swagger
+ * This file is part of auto-comment-for-php-swagger
  *
  */
 
-namespace AutoCommentForL5Swagger\Commands;
+namespace AutoCommentForPHPSwagger\Commands;
 
-use AutoCommentForL5Swagger\Libs\SwagIt;
+use AutoCommentForPHPSwagger\Libs\SwagIt;
 use Illuminate\Console\Command;
 
 class FileToAnnotationComment extends Command

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * This file is part of auto-comment-for-l5-swagger
+ * This file is part of auto-comment-for-php-swagger
  *
  */
 
@@ -75,7 +75,7 @@ return [
             |
             |
             */
-            'ControllerName' => \App\Http\Controllers\L5Swagger\OpenApiDoc::class,
+            'ControllerName' => \App\Http\Controllers\Swagger\OpenApiDoc::class,
 
             /*
             |--------------------------------------------------------------------------

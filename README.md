@@ -11,13 +11,13 @@ Automatically generate PHPSwagger comments using routing, form requests, and sma
 composer require --dev suzunone/auto-comment-for-l5-swagger
 ```
 ```shell
-php artisan vendor:publish --provider="AutoCommentForL5Swagger\AutoCommentForL5SwaggerServiceProvider" --tag=config
+php artisan vendor:publish --provider="AutoCommentForPHPSwagger\LAutoCommentForPHPSwaggerServiceProvider" --tag=config
 ```
 
 ## Usage
  * `openapi:create-model-to-schema`
  * `openapi:file-to-annotation`
- * `openapi:l5-swagger-comment` 
+ * `openapi:swagger-commen` 
 
 ## openapi annotation
 Small annotations can be used instead of the very large PHPSwagger format comments.
@@ -27,7 +27,7 @@ By writing in each method of Controller, PHPSwagger style annotations are automa
 
  * `@openapi`
 
-   Describes if you want to include the `openapi:l5-swagger-comment` target.
+   Describes if you want to include the `openapi:swagger-commen` target.
 
  * `@openapi-tags`
 

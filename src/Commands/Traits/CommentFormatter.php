@@ -1,11 +1,11 @@
 <?php
 
 /**
- * This file is part of auto-comment-for-l5-swagger
+ * This file is part of auto-comment-for-php-swagger
  *
  */
 
-namespace AutoCommentForL5Swagger\Commands\Traits;
+namespace AutoCommentForPHPSwagger\Commands\Traits;
 
 trait CommentFormatter
 {

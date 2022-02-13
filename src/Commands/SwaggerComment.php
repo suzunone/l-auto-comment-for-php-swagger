@@ -1,15 +1,15 @@
 <?php
 
 /**
- * This file is part of auto-comment-for-l5-swagger
+ * This file is part of auto-comment-for-php-swagger
  *
  */
 
-namespace AutoCommentForL5Swagger\Commands;
+namespace AutoCommentForPHPSwagger\Commands;
 
-use App\Http\Controllers\L5Swagger\OpenApiDoc;
-use AutoCommentForL5Swagger\Commands\Traits\CommentFormatter;
-use AutoCommentForL5Swagger\Libs\SwagIt;
+use App\Http\Controllers\Swagger\OpenApiDoc;
+use AutoCommentForPHPSwagger\Commands\Traits\CommentFormatter;
+use AutoCommentForPHPSwagger\Libs\SwagIt;
 use Closure;
 use Illuminate\Console\Command;
 use Illuminate\Routing\Route;
@@ -18,7 +18,7 @@ use Illuminate\Support\Str;
 use ReflectionClass;
 use Symfony\Component\Yaml\Yaml;
 
-class L5SwaggerComment extends Command
+class SwaggerComment extends Command
 {
     use CommentFormatter;
     /**
@@ -26,7 +26,7 @@ class L5SwaggerComment extends Command
      *
      * @var string
      */
-    protected $signature = 'openapi:l5-swagger-comment {type? : Config type to be used}';
+    protected $signature = 'openapi:swagger-comment {type? : Config type to be used}';
 
     /**
      * The console command description.
@@ -37,7 +37,7 @@ class L5SwaggerComment extends Command
 
     protected $router;
 
-    protected $config_root = 'auto-comment-for-l5-swagger.documentations.';
+    protected $config_root = 'auto-comment-for-php-swagger.documentations.';
 
     protected $add_schema = "";
 
@@ -55,7 +55,7 @@ class L5SwaggerComment extends Command
         $this->config_root .= $type . '.';
         $OpenApiDoc = $this->laravel['config']->get($this->config_root . 'ControllerName', OpenApiDoc::class);
 
-        // $this->call('make:controller', ['name' => 'L5Swagger/OpenApiDoc']);
+        // $this->call('make:controller', ['name' => 'Swagger/OpenApiDoc']);
         if (!class_exists($OpenApiDoc)) {
             $this->comment('please call php artisan make:controller ' . str_replace("\\", '/', $OpenApiDoc));
 
@@ -78,7 +78,7 @@ COMMENT;
         $open_api_comment = '';
         foreach ($route as $route_item) {
             foreach ($route_item['methods'] as $method) {
-                $open_api_comment .= $this->getL5Comment($method, $route_item);
+                $open_api_comment .= $this->getComment($method, $route_item);
             }
         }
 
@@ -98,7 +98,7 @@ COMMENT;
      * @param array $route_item
      * @return string
      */
-    public function getL5Comment(string $method, array $route_item): string
+    public function getComment(string $method, array $route_item): string
     {
         $method = Str::studly(strtolower($method));
 

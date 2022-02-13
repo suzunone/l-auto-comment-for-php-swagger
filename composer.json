@@ -1,5 +1,5 @@
 {
-  "name": "suzunone/auto-comment-for-l5-swagger",
+  "name": "suzunone/l-auto-comment-for-php-swagger",
   "description": "Automatically generate PHP Swagger comments from Laravel's Controller, Model, and form requests.",
   "type": "library",
   "require": {
@@ -13,7 +13,7 @@
   "license": "MIT",
   "autoload": {
     "psr-4": {
-      "AutoCommentForL5Swagger\\": "src/"
+      "AutoCommentForPHPSwagger\\": "src/"
     }
   },
   "authors": [
@@ -25,7 +25,7 @@
   "extra": {
     "laravel": {
       "providers": [
-        "AutoCommentForL5Swagger\\AutoCommentForL5SwaggerServiceProvider"
+        "AutoCommentForPHPSwagger\\LAutoCommentForPHPSwaggerServiceProvider"
       ]
     }
   }

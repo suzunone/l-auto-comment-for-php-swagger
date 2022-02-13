@@ -1,14 +1,14 @@
 <?php
 
 /**
- * This file is part of auto-comment-for-l5-swagger
+ * This file is part of auto-comment-for-php-swagger
  *
  */
 
-namespace AutoCommentForL5Swagger\Commands;
+namespace AutoCommentForPHPSwagger\Commands;
 
-use AutoCommentForL5Swagger\Commands\Traits\CommentFormatter;
-use AutoCommentForL5Swagger\Libs\EmptyExample;
+use AutoCommentForPHPSwagger\Commands\Traits\CommentFormatter;
+use AutoCommentForPHPSwagger\Libs\EmptyExample;
 use Barryvdh\LaravelIdeHelper\Console\ModelsCommand;
 use ReflectionClass;
 use Symfony\Component\Console\Input\InputArgument;
@@ -34,7 +34,7 @@ class ModelToOpenApiSchema extends ModelsCommand
      */
     protected $description = 'Create PHPSwagger schema file for models';
 
-    protected $config_root = 'auto-comment-for-l5-swagger.documentations.';
+    protected $config_root = 'auto-comment-for-php-swagger.documentations.';
 
     protected $schema_path = '';
 
