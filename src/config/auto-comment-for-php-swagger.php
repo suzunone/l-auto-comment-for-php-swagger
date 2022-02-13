@@ -22,7 +22,6 @@ return [
             | e.g. `app/Services/* /Models` (without the space)
             |
             */
-
             'model_locations' => [
                 'app',
             ],
@@ -36,7 +35,6 @@ return [
             | If null, it is the same as the Model name.
             |
             */
-
             'schemas_filename' => null,
 
             /*
@@ -50,23 +48,25 @@ return [
                 'SESSION_COOKIE',
                 Str::slug(env('APP_NAME', 'laravel'), '_') . '_session'
             ),
+
             /*
             |--------------------------------------------------------------------------
             | Skip to create open api Schema file
             |--------------------------------------------------------------------------
             |
+            | Define which models should be ignored.
             |
             */
             'ignored_models' => [],
 
             /*
-           |--------------------------------------------------------------------------
-           | Api Example Property
-           |--------------------------------------------------------------------------
-           |
-           |
-           */
-            'api_example_property_name' => '',
+            |--------------------------------------------------------------------------
+            | Api Example Property
+            |--------------------------------------------------------------------------
+            |
+            |
+            */
+            'api_example_property_name' => 'api_example',
 
             /*
             |--------------------------------------------------------------------------

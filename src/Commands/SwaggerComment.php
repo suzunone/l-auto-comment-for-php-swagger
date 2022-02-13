@@ -90,7 +90,9 @@ COMMENT;
 
         $stub = str_replace(['// OpenApiDoc //', '__Namespaces__'], [$comment, $namespace], $stub);
 
-        file_put_contents((new ReflectionClass($OpenApiDoc))->getFileName(), $stub);
+        $file_name = (new ReflectionClass($OpenApiDoc))->getFileName();
+        $this->info('write:' . $file_name);
+        file_put_contents($file_name, $stub);
     }
 
     /**

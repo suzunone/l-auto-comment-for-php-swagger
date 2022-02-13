@@ -50,7 +50,7 @@ class ModelToOpenApiSchema extends ModelsCommand
     {
         $type = $this->argument('type') ?? 'default';
         $this->config_root .= $type . '.';
-        $this->schema_path = $this->laravel['config']->get($this->config_root . 'schema_path', $path = $this->laravel['path'] . '/Schemas/');
+        $this->schema_path = $this->laravel['config']->get($this->config_root . 'schema_path', $this->laravel['path'] . '/Schemas/');
 
         if (!is_dir($this->schema_path)) {
             $this->error('Please create dir.:' . $this->schema_path);
@@ -58,7 +58,7 @@ class ModelToOpenApiSchema extends ModelsCommand
             return -1;
         }
 
-        $this->filename = $this->laravel['config']->get($this->config_root . 'schemas_filename', $path = $this->laravel['path'] . '/Schemas/OpenApiSchemasDoc.php');
+        $this->filename = $this->laravel['config']->get($this->config_root . 'schemas_filename', null);
         $this->filename = $this->option('filename') ?? $this->filename;
 
         $model = $this->argument('model');
@@ -79,13 +79,16 @@ class ModelToOpenApiSchema extends ModelsCommand
             $content = $this->commentFormatter($content);
             $schema = file_get_contents($this->getStub('oa_schemas'));
             $schema = str_replace(
-                [ '__Namespaces__', 'OPEN_API_SCHEMAS_ANNOTATION',],
+                ['__Namespaces__', 'OPEN_API_SCHEMAS_ANNOTATION',],
                 [$this->laravel['config']->get($this->config_root . 'schema_name_space'), $content],
                 $schema
             );
 
+            $this->info('write:' . $this->filename);
             file_put_contents($this->filename, $schema);
         }
+
+        return 0;
     }
 
     /**
@@ -132,138 +135,140 @@ class ModelToOpenApiSchema extends ModelsCommand
             }
             $this->properties = [];
             $this->methods = [];
-            if (class_exists($name)) {
-                try {
-                    // handle abstract classes, interfaces, ...
-                    $reflectionClass = new ReflectionClass($name);
+            if (!class_exists($name)) {
+                continue;
+            }
 
-                    if (!$reflectionClass->isSubclassOf('Illuminate\Database\Eloquent\Model')) {
+            try {
+                // handle abstract classes, interfaces, ...
+                $reflectionClass = new ReflectionClass($name);
+
+                if (!$reflectionClass->isSubclassOf('Illuminate\Database\Eloquent\Model')) {
+                    continue;
+                }
+
+                $this->comment("Loading model '${name}'", OutputInterface::VERBOSITY_VERBOSE);
+
+                if (!$reflectionClass->IsInstantiable()) {
+                    // ignore abstract class or interface
+                    continue;
+                }
+
+                /**
+                 * @var \Illuminate\Database\Eloquent\Model $model
+                 */
+                $model = $this->laravel->make($name);
+
+                if ($hasDoctrine) {
+                    $this->getPropertiesFromTable($model);
+                }
+
+                if (method_exists($model, 'getCasts')) {
+                    $this->castPropertiesType($model);
+                }
+
+                $this->getPropertiesFromMethods($model);
+                $this->getSoftDeleteMethods($model);
+                $this->getCollectionMethods($model);
+                $this->getFactoryMethods($model);
+
+                $this->runModelHooks($model);
+
+                $hidden = $reflectionClass->getProperty('hidden');
+                $hidden->setAccessible(true);
+                $hidden = $hidden->getValue(new $name);
+
+                $OARequired = [];
+                $properties = '';
+                $properties_doc_comments = '';
+                $ai = '';
+                foreach ($this->properties as $VariableName => $property) {
+                    $TypeProperty = $property['type'];
+                    if (strpos($TypeProperty, "\\") !== false) {
                         continue;
                     }
 
-                    $this->comment("Loading model '${name}'", OutputInterface::VERBOSITY_VERBOSE);
-
-                    if (!$reflectionClass->IsInstantiable()) {
-                        // ignore abstract class or interface
+                    if ($property['read'] === false) {
                         continue;
                     }
 
-                    /**
-                     * @var \Illuminate\Database\Eloquent\Model $model
-                     */
-                    $model = $this->laravel->make($name);
-
-                    if ($hasDoctrine) {
-                        $this->getPropertiesFromTable($model);
+                    if (in_array($VariableName, $hidden, true)) {
+                        continue;
                     }
 
-                    if (method_exists($model, 'getCasts')) {
-                        $this->castPropertiesType($model);
-                    }
-
-                    $this->getPropertiesFromMethods($model);
-                    $this->getSoftDeleteMethods($model);
-                    $this->getCollectionMethods($model);
-                    $this->getFactoryMethods($model);
-
-                    $this->runModelHooks($model);
-
-                    $hidden = $reflectionClass->getProperty('hidden');
-                    $hidden->setAccessible(true);
-                    $hidden = $hidden->getValue(new $name);
-
-                    $OARequired = [];
-                    $properties = '';
-                    $properties_doc_comments = '';
-                    $ai = '';
-                    foreach ($this->properties as $VariableName => $property) {
-                        $TypeProperty = $property['type'];
-                        if (strpos($TypeProperty, "\\") !== false) {
-                            continue;
-                        }
-
-                        if ($property['read'] === false) {
-                            continue;
-                        }
-
-                        if (array_search($VariableName, $hidden) !== false) {
-                            continue;
-                        }
-
-                        $TypeProperty = str_replace(
-                            ['timestamp', 'date', 'datetime', 'int', 'bool', 'boolbool', '|'],
-                            ['string', 'string', 'string', 'integer', 'boolean', 'bool', ','],
-                            $TypeProperty
-                        );
-
-                        $_TypeProperty = $TypeProperty;
-                        if (strpos($_TypeProperty, 'integer') !== false) {
-                            $TypeProperty = '"integer"';
-                        } elseif (strpos($_TypeProperty, 'double') !== false) {
-                            $TypeProperty = '"number"';
-                        } elseif (strpos($_TypeProperty, 'float') !== false) {
-                            $TypeProperty = '"number"';
-                        } elseif (strpos($_TypeProperty, 'string') !== false) {
-                            $TypeProperty = '"string"';
-                        } elseif (strpos($_TypeProperty, 'boolean') !== false) {
-                            $TypeProperty = '"boolean"';
-                        } elseif (strpos($_TypeProperty, 'array') !== false) {
-                            $TypeProperty = '"array"';
-                        } elseif (strpos($_TypeProperty, 'Carbon') !== false) {
-                            $TypeProperty = '"string"';
-                        } else {
-                            $TypeProperty = '"string"';
-                        }
-
-                        if (strpos($_TypeProperty, 'null')) {
-                            $TypeProperty .= ',nullable=true';
-                        }
-
-                        $api_example_property_name = $this->laravel['config']->get($this->config_root . 'api_example_property_name', 'api_example_property_name');
-                        $example = (array)$model->{$api_example_property_name};
-                        $OARequired[] = '"' . $VariableName . '"';
-
-                        if ($model->incrementing && $model->getKeyName() === $VariableName) {
-                            $ai = str_replace(['DOC_COMMENT', 'VariableName'], [trim('@var ' . $property['type']), $VariableName], file_get_contents($this->getStub('oa_property')));
-
-                            continue;
-                        }
-
-                        $properties_doc_comment = $this->createPropertyAnnotation($VariableName, $TypeProperty, $property['comment'], array_key_exists($VariableName, $example) ? $example[$VariableName] : new EmptyExample());
-                        $properties_doc_comments .= $properties_doc_comment;
-                        $properties .= str_replace(['DOC_COMMENT', 'VariableName'], [trim('@var ' . $property['type']), $VariableName], file_get_contents($this->getStub('oa_property')));
-                    }
-
-                    $schema = file_get_contents($this->getStub('oa_schema'));
-
-                    $MainClassAnnotation = $this->createMainClassAnnotation($reflectionClass->getShortName(), join(',', $OARequired), $properties_doc_comments);
-
-                    $ListClassAnnotation = $this->createListClassAnnotation($reflectionClass->getShortName(), $model->incrementing ? $model->getKeyName() : null);
-
-                    $schema = str_replace(
-                        ['// properties //', '// ai_properties //', 'ClassName', 'OARequired', '__Namespaces__', 'MAIN_CLASS_ANNOTATION', 'LIST_CLASS_ANNOTATION'],
-                        [$properties, $ai, $reflectionClass->getShortName(), join(',', $OARequired), $this->laravel['config']->get($this->config_root . 'schema_name_space'), $this->commentFormatter(trim($MainClassAnnotation)), $this->commentFormatter(trim($ListClassAnnotation))],
-                        $schema
+                    $TypeProperty = str_replace(
+                        ['timestamp', 'date', 'datetime', 'int', 'bool', 'boolbool', '|'],
+                        ['string', 'string', 'string', 'integer', 'boolean', 'bool', ','],
+                        $TypeProperty
                     );
 
-                    if ($this->filename === null) {
-                        $file_path = $path . $reflectionClass->getShortName() . '.php';
-                        $this->info('write:' . $file_path);
-
-                        file_put_contents($file_path, $schema);
+                    $_TypeProperty = $TypeProperty;
+                    if (strpos($_TypeProperty, 'integer') !== false) {
+                        $TypeProperty = '"integer"';
+                    } elseif (strpos($_TypeProperty, 'double') !== false) {
+                        $TypeProperty = '"number"';
+                    } elseif (strpos($_TypeProperty, 'float') !== false) {
+                        $TypeProperty = '"number"';
+                    } elseif (strpos($_TypeProperty, 'string') !== false) {
+                        $TypeProperty = '"string"';
+                    } elseif (strpos($_TypeProperty, 'boolean') !== false) {
+                        $TypeProperty = '"boolean"';
+                    } elseif (strpos($_TypeProperty, 'array') !== false) {
+                        $TypeProperty = '"array"';
+                    } elseif (strpos($_TypeProperty, 'Carbon') !== false) {
+                        $TypeProperty = '"string"';
+                    } else {
+                        $TypeProperty = '"string"';
                     }
 
-                    $output .= $MainClassAnnotation;
-                    $output .= $ListClassAnnotation;
+                    if (strpos($_TypeProperty, 'null')) {
+                        $TypeProperty .= ',nullable=true';
+                    }
 
-                    // $output .= $this->createPhpDocs($name);
-                    $ignore[] = $name;
-                    $this->nullableColumns = [];
-                } catch (Throwable $e) {
-                    $this->error('Exception: ' . $e->getMessage() .
-                        "\nCould not analyze class ${name}.\n\nTrace:\n" .
-                        $e->getTraceAsString());
+                    $api_example_property_name = $this->laravel['config']->get($this->config_root . 'api_example_property_name', 'api_example');
+                    $example = (array)$model->{$api_example_property_name};
+                    $OARequired[] = '"' . $VariableName . '"';
+
+                    if ($model->incrementing && $model->getKeyName() === $VariableName) {
+                        $ai = str_replace(['DOC_COMMENT', 'VariableName'], [trim('@var ' . $property['type']), $VariableName], file_get_contents($this->getStub('oa_property')));
+
+                        continue;
+                    }
+
+                    $properties_doc_comment = $this->createPropertyAnnotation($VariableName, $TypeProperty, $property['comment'], array_key_exists($VariableName, $example) ? $example[$VariableName] : new EmptyExample());
+                    $properties_doc_comments .= $properties_doc_comment;
+                    $properties .= str_replace(['DOC_COMMENT', 'VariableName'], [trim('@var ' . $property['type']), $VariableName], file_get_contents($this->getStub('oa_property')));
                 }
+
+                $schema = file_get_contents($this->getStub('oa_schema'));
+
+                $MainClassAnnotation = $this->createMainClassAnnotation($reflectionClass->getShortName(), join(',', $OARequired), $properties_doc_comments);
+
+                $ListClassAnnotation = $this->createListClassAnnotation($reflectionClass->getShortName(), $model->incrementing ? $model->getKeyName() : null);
+
+                $schema = str_replace(
+                    ['// properties //', '// ai_properties //', 'ClassName', 'OARequired', '__Namespaces__', 'MAIN_CLASS_ANNOTATION', 'LIST_CLASS_ANNOTATION'],
+                    [$properties, $ai, $reflectionClass->getShortName(), join(',', $OARequired), $this->laravel['config']->get($this->config_root . 'schema_name_space'), $this->commentFormatter(trim($MainClassAnnotation)), $this->commentFormatter(trim($ListClassAnnotation))],
+                    $schema
+                );
+
+                if ($this->filename === null) {
+                    $file_path = $path . $reflectionClass->getShortName() . '.php';
+                    $this->info('write:' . $file_path);
+
+                    file_put_contents($file_path, $schema);
+                }
+
+                $output .= $MainClassAnnotation;
+                $output .= $ListClassAnnotation;
+
+                // $output .= $this->createPhpDocs($name);
+                $ignore[] = $name;
+                $this->nullableColumns = [];
+            } catch (Throwable $e) {
+                $this->error('Exception: ' . $e->getMessage() .
+                    "\nCould not analyze class ${name}.\n\nTrace:\n" .
+                    $e->getTraceAsString());
             }
         }
 
@@ -299,10 +304,14 @@ class ModelToOpenApiSchema extends ModelsCommand
             ['filename', 'F', InputOption::VALUE_OPTIONAL, 'The path to the helper file'],
             ['ignore', 'I', InputOption::VALUE_OPTIONAL, 'Which models to ignore', ''],
             ['dir', 'D', InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY,
-                'The model dir, supports glob patterns', [], ],
+                'The model dir, supports glob patterns', [],],
         ];
     }
 
+    /**
+     * @param mixed $example
+     * @throws \JsonException
+     */
     protected function createPropertyAnnotation(string $name, string $TypeProperty, string $TypeDescription, $example): string
     {
         if ($example instanceof EmptyExample) {
@@ -311,7 +320,7 @@ class ModelToOpenApiSchema extends ModelsCommand
 
 COMMENT;
         } else {
-            $example = json_encode($example);
+            $example = json_encode($example, JSON_THROW_ON_ERROR);
             $comment = <<<COMMENT
 @OA\\Property(property="{$name}", type={$TypeProperty},description="{$TypeDescription}",example={$example}),
 
