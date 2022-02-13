@@ -16,8 +16,11 @@ php artisan vendor:publish --provider="AutoCommentForPHPSwagger\LAutoCommentForP
 
 ## Usage
  * `openapi:create-model-to-schema`
+   *  Create PHPSwagger schema file for models
  * `openapi:file-to-annotation`
+   * Create a comment definition from yaml or json
  * `openapi:swagger-commen` 
+   * Automatically generate comments for PHPSwagger
 
 ## openapi annotation
 Small annotations can be used instead of the very large PHPSwagger format comments.
