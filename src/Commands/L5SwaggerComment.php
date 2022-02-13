@@ -346,7 +346,8 @@ COMMENT;
         foreach ($match[2] as $key => $value) {
             $property = preg_split('/ +/', trim($value), 3);
             $property[1] = ltrim($property[1], '$');
-            $property[2] = $property[2] ?? $property[1];g
+            $property[2] = $property[2] ?? $property[1];
+
 
             $required = strpos($property[0], 'null') !== false ? 'false' : 'true';
             $format = 'format="any"';
