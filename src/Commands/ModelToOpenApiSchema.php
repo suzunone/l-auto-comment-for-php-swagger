@@ -287,8 +287,9 @@ class ModelToOpenApiSchema extends ModelsCommand
         return array_merge(
             [
                 ['type', InputArgument::OPTIONAL, 'Config type to be used', 'default'],
+
+                ['model', InputArgument::OPTIONAL | InputArgument::IS_ARRAY, 'Which models to include', []],
             ],
-            parent::getArguments()
         );
     }
 
@@ -300,17 +301,6 @@ class ModelToOpenApiSchema extends ModelsCommand
             ['dir', 'D', InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY,
                 'The model dir, supports glob patterns', [], ],
         ];
-        /*
-        $res = parent::getOptions();
-        foreach ($res as $key => &$item) {
-            switch ($item[0]) {
-                default:
-                    $item[3] = 'Unavailable options';
-            }
-        }
-
-        return $res;
-        */
     }
 
     protected function createPropertyAnnotation(string $name, string $TypeProperty, string $TypeDescription, $example): string
