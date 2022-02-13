@@ -7,20 +7,25 @@
 
 namespace AutoCommentForL5Swagger\Commands;
 
+use AutoCommentForL5Swagger\Commands\Traits\CommentFormatter;
+use AutoCommentForL5Swagger\Libs\EmptyExample;
 use Barryvdh\LaravelIdeHelper\Console\ModelsCommand;
 use ReflectionClass;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
 
 class ModelToOpenApiSchema extends ModelsCommand
 {
+    use CommentFormatter;
+
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'openapi:create-model-to-schema {type? : Config type to be used}';
+    protected $name = 'openapi:create-model-to-schema';
 
     /**
      * The console command description.
@@ -45,8 +50,9 @@ class ModelToOpenApiSchema extends ModelsCommand
         $this->schema_path = $this->laravel['config']->get($this->config_root . 'schema_path', $path = $this->laravel['path'] . '/Schemas/');
 
         if (!is_dir($this->schema_path)) {
-            $this->error('Please create dir.:'.$this->schema_path);
-            return;
+            $this->error('Please create dir.:' . $this->schema_path);
+
+            return -1;
         }
 
         $this->input->setOption('write', true);
@@ -114,6 +120,9 @@ class ModelToOpenApiSchema extends ModelsCommand
                         continue;
                     }
 
+                    /**
+                     * @var \Illuminate\Database\Eloquent\Model $model
+                     */
                     $model = $this->laravel->make($name);
 
                     if ($hasDoctrine) {
@@ -137,6 +146,8 @@ class ModelToOpenApiSchema extends ModelsCommand
 
                     $OARequired = [];
                     $properties = '';
+                    $properties_doc_comments = '';
+                    $ai = '';
                     foreach ($this->properties as $VariableName => $property) {
                         $TypeProperty = $property['type'];
                         if (strpos($TypeProperty, "\\") !== false) {
@@ -180,15 +191,29 @@ class ModelToOpenApiSchema extends ModelsCommand
                             $TypeProperty .= ',nullable=true';
                         }
 
+                        $explain = (array)$model->explain;
                         $OARequired[] = '"' . $VariableName . '"';
-                        $properties .= str_replace(['TypeProperty', 'VariableName', 'TypeDescription'], [$TypeProperty, $VariableName, $property['comment']], file_get_contents($this->getStub('oa_property')));
+
+                        if ($model->incrementing && $model->getKeyName() === $VariableName) {
+                            $ai = str_replace(['DOC_COMMENT', 'VariableName'], [trim('@var ' . $property['type']), $VariableName], file_get_contents($this->getStub('oa_property')));
+
+                            continue;
+                        }
+
+                        $properties_doc_comment = $this->createPropertyAnnotation($VariableName, $TypeProperty, $property['comment'], array_key_exists($VariableName, $explain) ? $explain[$VariableName] : new EmptyExample());
+                        $properties_doc_comments .= $properties_doc_comment;
+                        $properties .= str_replace(['DOC_COMMENT', 'VariableName'], [trim('@var ' . $property['type']), $VariableName], file_get_contents($this->getStub('oa_property')));
                     }
 
                     $schema = file_get_contents($this->getStub('oa_schema'));
 
+                    $MainClassAnnotation = $this->createMainClassAnnotation($reflectionClass->getShortName(), join(',', $OARequired), $properties_doc_comments);
+
+                    $ListClassAnnotation = $this->createListClassAnnotation($reflectionClass->getShortName(), $model->incrementing ? $model->getKeyName() : null);
+
                     $schema = str_replace(
-                        ['// properties //', 'ClassName', 'OARequired', '__Namespaces__'],
-                        [$properties, $reflectionClass->getShortName(), join(',', $OARequired), $this->laravel['config']->get($this->config_root . 'schema_name_space')],
+                        ['// properties //', '// ai_properties //', 'ClassName', 'OARequired', '__Namespaces__', 'MAIN_CLASS_ANNOTATION', 'LIST_CLASS_ANNOTATION'],
+                        [$properties, $ai, $reflectionClass->getShortName(), join(',', $OARequired), $this->laravel['config']->get($this->config_root . 'schema_name_space'), $this->commentFormatter(trim($MainClassAnnotation)), $this->commentFormatter(trim($ListClassAnnotation))],
                         $schema
                     );
 
@@ -224,9 +249,132 @@ class ModelToOpenApiSchema extends ModelsCommand
     {
         return array_merge(
             [
-                ['type', InputArgument::OPTIONAL, '', 'default'],
+                ['type', InputArgument::OPTIONAL, 'Config type to be used', 'default'],
             ],
             parent::getArguments(),
         );
+    }
+
+    protected function createPropertyAnnotation(string $name, string $TypeProperty, string $TypeDescription, $example): string
+    {
+        if ($example instanceof EmptyExample) {
+            $comment = <<<COMMENT
+@OA\\Property(property="{$name}", type={$TypeProperty},description="{$TypeDescription}"),
+
+COMMENT;
+        } else {
+            $example = json_encode($example);
+            $comment = <<<COMMENT
+@OA\\Property(property="{$name}", type={$TypeProperty},description="{$TypeDescription}",example={$example}),
+
+COMMENT;
+        }
+
+        return $comment;
+    }
+
+    protected function createMainClassAnnotation($schema_name, $required, $all_of = ''): string
+    {
+        return <<<COMMENT
+@OA\\Schema(
+    schema="Create{$schema_name}",
+    required={{$required}},
+    type="object",
+    {$all_of}
+)
+
+COMMENT;
+    }
+
+    protected function createListClassAnnotation($schema_name, $ai = 'id'): string
+    {
+        if ($ai) {
+            $comment = <<<COMMENT
+@OA\\Schema(
+  schema="{$schema_name}",
+  type="object",
+  allOf={
+      @OA\\Schema(ref="#/components/schemas/Create{$schema_name}"),
+      @OA\\Schema(
+          required={"{$ai}"},
+          @OA\\Property(property="{$ai}", format="int64", type="integer")
+      )
+  }
+)
+
+COMMENT;
+        } else {
+            $comment = <<<COMMENT
+@OA\\Schema(
+  schema="{$schema_name}",
+  type="object",
+  allOf={
+      @OA\\Schema(ref="#/components/schemas/Create{$schema_name}"),
+  }
+)
+
+COMMENT;
+        }
+
+        $comment .= <<<COMMENT
+@OA\\Schema(
+  schema="{$schema_name}PagenateLink",
+  type="object",
+  allOf={
+    @OA\\Schema(
+         required={"url", "label", "active"},
+         @OA\\Property(property="label", type="string"),
+         @OA\\Property(property="url", type="string"),
+         @OA\\Property(property="active", type="boolean"),
+    )
+  }
+)
+
+@OA\\Schema(
+     schema="{$schema_name}Pagenate",
+     type="object",
+     allOf={
+         @OA\\Schema(
+             required={"data","current_page", "from", "last_page", "per_page", "to", "total", "first_page_url", "last_page_url", "path", "prev_page_url", "links"},
+             @OA\\Property(
+                 property="data",
+                 type="array",
+                 @OA\\Items(
+                     ref="#/components/schemas/{$schema_name}"
+                 )
+             ),
+             @OA\\Property(property="current_page", format="int64", type="integer"),
+             @OA\\Property(property="from", format="int64", type="integer"),
+             @OA\\Property(property="last_page", format="int64", type="integer"),
+             @OA\\Property(property="per_page", format="int64", type="integer"),
+             @OA\\Property(property="to", format="int64", type="integer"),
+             @OA\\Property(property="total", format="int64", type="integer"),
+             @OA\\Property(property="first_page_url", type="string"),
+             @OA\\Property(property="last_page_url", type="string"),
+             @OA\\Property(property="next_page_url", type="string"),
+             @OA\\Property(property="path", type="string"),
+             @OA\\Property(property="prev_page_url", type="string"),
+
+             @OA\\Property(
+                 property="links",
+                 type="array",
+                 @OA\\Items(
+                     ref="#/components/schemas/{$schema_name}PagenateLink"
+                 )
+             ),
+         ),
+     }
+)
+
+@OA\\Schema(
+     schema="{$schema_name}Many",
+     type="array",
+     @OA\\Items(
+         ref="#/components/schemas/{$schema_name}"
+     )
+)
+COMMENT;
+
+        return $comment;
     }
 }

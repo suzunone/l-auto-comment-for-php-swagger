@@ -8,10 +8,7 @@
 namespace __Namespaces__;
 
 /**
- * @OA\Schema(
- *   schema="CreateClassName",
- *   required={OARequired}
- * )
+MAIN_CLASS_ANNOTATION
  */
 class CreateClassName
 {
@@ -19,76 +16,9 @@ class CreateClassName
 }
 
 /**
- * @OA\Schema(
- *   schema="ClassName",
- *   type="object",
- *   allOf={
- *       @OA\Schema(ref="#/components/schemas/CreateClassName"),
- *       @OA\Schema(
- *           required={"id"},
- *           @OA\Property(property="id", format="int64", type="integer")
- *       )
- *   }
- * )
- *
- *
- * @OA\Schema(
- *   schema="ClassNamePagenateLink",
- *   type="object",
- *   allOf={
- *     @OA\Schema(
- *          required={"url", "label", "active"},
- *          @OA\Property(property="label", type="string"),
- *          @OA\Property(property="url", type="string"),
- *          @OA\Property(property="active", type="boolean"),
- *     )
- *   }
- * )
- *
- * @OA\Schema(
- *      schema="ClassNamePagenate",
- *      type="object",
- *      allOf={
- *          @OA\Schema(
- *              required={"data","current_page", "from", "last_page", "per_page", "to", "total", "first_page_url", "last_page_url", "path", "prev_page_url", "links"},
- *              @OA\Property(
- *                  property="data",
- *                  type="array",
- *                  @OA\Items(
- *                      ref="#/components/schemas/ClassName"
- *                  )
- *              ),
- *              @OA\Property(property="current_page", format="int64", type="integer"),
- *              @OA\Property(property="from", format="int64", type="integer"),
- *              @OA\Property(property="last_page", format="int64", type="integer"),
- *              @OA\Property(property="per_page", format="int64", type="integer"),
- *              @OA\Property(property="to", format="int64", type="integer"),
- *              @OA\Property(property="total", format="int64", type="integer"),
- *              @OA\Property(property="first_page_url", type="string"),
- *              @OA\Property(property="last_page_url", type="string"),
- *              @OA\Property(property="next_page_url", type="string"),
- *              @OA\Property(property="path", type="string"),
- *              @OA\Property(property="prev_page_url", type="string"),
- *
- *              @OA\Property(
- *                  property="links",
- *                  type="array",
- *                  @OA\Items(
- *                      ref="#/components/schemas/ClassNamePagenateLink"
- *                  )
- *              ),
- *          ),
- *      }
- * )
- *
- * @OA\Schema(
- *      schema="ClassNameMany",
- *      type="array",
- *      @OA\Items(
- *          ref="#/components/schemas/ClassName"
- *      )
- * )
+LIST_CLASS_ANNOTATION
  */
-class ClassName
+class ClassName extends CreateClassName
 {
+// ai_properties //
 }

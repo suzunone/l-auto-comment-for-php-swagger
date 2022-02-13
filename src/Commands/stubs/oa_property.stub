@@ -1,4 +1,4 @@
   /**
-   * @OA\Property(type=TypeProperty,description="TypeDescription")
+   * DOC_COMMENT
    */
   public $VariableName;

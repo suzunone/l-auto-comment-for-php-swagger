@@ -45,9 +45,9 @@ class L5SwaggerComment extends Command
      * Execute the console command.
      *
      * @param \Illuminate\Routing\Router $Router
-     * @return int
      * @throws \JsonException
      * @throws \ReflectionException
+     * @return int
      */
     public function handle(Router $Router)
     {
@@ -189,7 +189,7 @@ COMMENT;
 
     /**
      * @param array $annotation
-     * @param string|null $id
+     * @param null|string $id
      * @return string
      */
     public function makeResponseTag(array $annotation, ?string $id = null):string
@@ -234,7 +234,7 @@ COMMENT;
 
     /**
      * @param array $ref_arr
-     * @param string|null $id
+     * @param null|string $id
      * @return string
      */
     public function createSchema(array $ref_arr, ?string $id):string
@@ -373,7 +373,6 @@ COMMENT;
         return $comment;
     }
 
-
     /**
      * Compile the routes into a displayable format.
      *
@@ -443,8 +442,8 @@ Comment;
      * Get the route information for a given route.
      *
      * @param \Illuminate\Routing\Route $route
-     * @return array
      * @throws \ReflectionException
+     * @return array
      */
     protected function getRouteInformation(Route $route): array
     {
@@ -474,8 +473,8 @@ Comment;
 
     /**
      * @param string $action
-     * @return array|\ReflectionParameter[]
      * @throws \ReflectionException
+     * @return array|\ReflectionParameter[]
      */
     protected function getAttributesByAction(string $action): array
     {
@@ -505,8 +504,8 @@ Comment;
 
     /**
      * @param string $action
-     * @return string
      * @throws \ReflectionException
+     * @return string
      */
     protected function getDocCommentByAction(string $action): string
     {

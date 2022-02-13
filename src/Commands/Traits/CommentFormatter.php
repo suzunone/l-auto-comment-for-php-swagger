@@ -1,19 +1,8 @@
 <?php
+
 /**
- * CommentFormatter.php
+ * This file is part of auto-comment-for-l5-swagger
  *
- * Class CommentFormatter
- *
- * @category   codingTests
- * @package    AutoCommentForL5Swagger\Commands\Traits
- * @subpackage AutoCommentForL5Swagger\Commands\Traits
- * @author     suzunone<suzunone.eleven@gmail.com>
- * @copyright  Project codingTests
- * @license    BSD 3-Clause License
- * @version    1.0
- * @link       https://github.com/suzunone/codingTests
- * @see        https://github.com/suzunone/codingTests
- * @since      2022/02/13
  */
 
 namespace AutoCommentForL5Swagger\Commands\Traits;
