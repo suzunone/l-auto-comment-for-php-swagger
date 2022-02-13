@@ -8,7 +8,7 @@ Automatically generate PHPSwagger comments using routing, form requests, and sma
 
 ## Installation
 ```shell
-composer require --dev suzunone/auto-comment-for-l5-swagger
+composer require --dev suzunone/l-auto-comment-for-php-swagger
 ```
 ```shell
 php artisan vendor:publish --provider="AutoCommentForPHPSwagger\LAutoCommentForPHPSwaggerServiceProvider" --tag=config
