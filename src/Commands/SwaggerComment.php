@@ -208,16 +208,19 @@ COMMENT;
             switch (strtolower($type)) {
                 case 'json':
                 case 'jsoncontent':
+                case 'json-content':
                 $response_type[$response][] = new JsonContent();
 
                     break;
                 case 'xml':
                 case 'xmlcontent':
+                case 'xml-content':
                 $response_type[$response][] = new XmlContent();
 
                     break;
                 case 'media':
-                case 'MediaType':
+                case 'mediatype':
+                case 'media-type':
                 $response_type[$response][] = new MediaType(array_shift($res_type));
 
                     break;

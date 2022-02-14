@@ -50,6 +50,13 @@ By writing in each method of Controller, PHPSwagger style annotations are automa
     
     Multiple entries can be made by changing the HTTP STATUS
 
+ * `@openapi-response-type {HTTP STATUS} {RESPONSE TYPE} {CONTENT TYPE}`
+
+    The response type can be specified.
+    You can choose from json xml media-type, and if you choose media-type, you can specify the content type.
+    If there is more than one response type, multiple responses can be listed.
+    If omitted, json will be used.
+ 
  * `@openapi-ignore-session-cookie`
 
    Describes when session cookies are not used.
