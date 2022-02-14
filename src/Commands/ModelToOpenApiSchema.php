@@ -375,7 +375,7 @@ COMMENT;
 
         $comment .= <<<COMMENT
 @OA\\Schema(
-  schema="{$schema_name}PagenateLink",
+  schema="{$schema_name}PaginateLink",
   type="object",
   allOf={
     @OA\\Schema(
@@ -388,7 +388,7 @@ COMMENT;
 )
 
 @OA\\Schema(
-     schema="{$schema_name}Pagenate",
+     schema="{$schema_name}Paginate",
      type="object",
      allOf={
          @OA\\Schema(
@@ -416,7 +416,7 @@ COMMENT;
                  property="links",
                  type="array",
                  @OA\\Items(
-                     ref="#/components/schemas/{$schema_name}PagenateLink"
+                     ref="#/components/schemas/{$schema_name}PaginateLink"
                  )
              ),
          ),

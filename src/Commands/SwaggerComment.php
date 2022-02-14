@@ -9,6 +9,9 @@ namespace AutoCommentForPHPSwagger\Commands;
 
 use App\Http\Controllers\Swagger\OpenApiDoc;
 use AutoCommentForPHPSwagger\Commands\Traits\CommentFormatter;
+use AutoCommentForPHPSwagger\Entities\Responses\JsonContent;
+use AutoCommentForPHPSwagger\Entities\Responses\MediaType;
+use AutoCommentForPHPSwagger\Entities\Responses\XmlContent;
 use AutoCommentForPHPSwagger\Libs\SwagIt;
 use Closure;
 use Illuminate\Console\Command;
@@ -21,6 +24,7 @@ use Symfony\Component\Yaml\Yaml;
 class SwaggerComment extends Command
 {
     use CommentFormatter;
+
     /**
      * The name and signature of the console command.
      *
@@ -45,8 +49,8 @@ class SwaggerComment extends Command
      * Execute the console command.
      *
      * @param \Illuminate\Routing\Router $Router
-     * @throws \JsonException
      * @throws \ReflectionException
+     * @throws \JsonException
      * @return int
      */
     public function handle(Router $Router)
@@ -194,10 +198,34 @@ COMMENT;
      * @param null|string $id
      * @return string
      */
-    public function makeResponseTag(array $annotation, ?string $id = null):string
+    public function makeResponseTag(array $annotation, ?string $id = null): string
     {
+        $response_type = [];
+
+        foreach ($annotation['openapi-response-type'] ?? [] as $res_type) {
+            $response = array_shift($res_type);
+            $type = array_shift($res_type);
+            switch (strtolower($type)) {
+                case 'json':
+                case 'jsoncontent':
+                $response_type[$response][] = new JsonContent();
+
+                    break;
+                case 'xml':
+                case 'xmlcontent':
+                $response_type[$response][] = new XmlContent();
+
+                    break;
+                case 'media':
+                case 'MediaType':
+                $response_type[$response][] = new MediaType(array_shift($res_type));
+
+                    break;
+            }
+        }
+
         $comment = '';
-        foreach ($annotation['openapi-response'] as $os_res) {
+        foreach ($annotation['openapi-response'] ?? [] as $os_res) {
             $response = array_shift($os_res);
             $ref = array_shift($os_res);
             $description = implode(' ', $os_res);
@@ -205,9 +233,16 @@ COMMENT;
             if (stripos($ref, '&') === false) {
                 $comment .= <<<COMMENT
 @OA\\Response(
-response="{$response}",
-description="{$description}",
-@OA\\JsonContent(ref="{$ref}")
+    response="{$response}",
+    description="{$description}",
+
+COMMENT;
+
+                foreach ($response_type[$response] ?? [new JsonContent()] as $responseType) {
+                    $comment .= $responseType->comment($ref);
+                }
+
+                $comment .= <<<'COMMENT'
 ),
 
 COMMENT;
@@ -220,9 +255,15 @@ COMMENT;
 
             $comment .= <<<COMMENT
 @OA\\Response(
-response="{$response}",
-description="{$description}",
-@OA\\JsonContent(ref="#/components/schemas/{$schema}")
+    response="{$response}",
+    description="{$description}",
+
+COMMENT;
+            foreach ($response_type[$response] ?? [new JsonContent()] as $responseType) {
+                $comment .= $responseType->comment("#/components/schemas/{$schema}");
+            }
+
+            $comment .= <<<'COMMENT'
 ),
 
 COMMENT;
@@ -239,7 +280,7 @@ COMMENT;
      * @param null|string $id
      * @return string
      */
-    public function createSchema(array $ref_arr, ?string $id):string
+    public function createSchema(array $ref_arr, ?string $id): string
     {
         $sub_comment = '';
         $comment = <<<COMMENT
