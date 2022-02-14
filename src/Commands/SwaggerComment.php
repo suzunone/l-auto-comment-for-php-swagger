@@ -386,10 +386,20 @@ COMMENT;
 
         $reflection = new ReflectionClass($class_name);
 
+        preg_match_all('/@openapi-in (.*)/', $reflection->getDocComment(), $in_match);
+
+        $in_list = [];
+        foreach ($in_match[1] ?? [] as $key => $value) {
+            $property = preg_split('/ +/', trim($value), 2);
+            $property[1] = ltrim($property[1], '$');
+
+            $in_list[$property[1]] = $property[0];
+        }
+
         preg_match_all('/@property(-read)? (.*)/', $reflection->getDocComment(), $match);
 
         $comment = '';
-        foreach ($match[2] as $key => $value) {
+        foreach ($match[2] ?? [] as $key => $value) {
             $property = preg_split('/ +/', trim($value), 3);
             $property[1] = ltrim($property[1], '$');
             $property[2] = $property[2] ?? $property[1];
@@ -410,15 +420,20 @@ COMMENT;
                 $format = 'type="numper"';
             }
 
+            $in = 'in="query"';
+            if (isset($in_list[$property[1]])) {
+                $in = 'in="' . $in_list[$property[1]] . '"';
+            }
+
             $comment .= <<<COMMENT
 @OA\\Parameter(
-name="{$property[1]}",
-description="{$property[2]}",
-@OA\\Schema(
-{$format}
-),
-in="query",
-required={$required}
+    name="{$property[1]}",
+    description="{$property[2]}",
+    @OA\\Schema(
+        {$format},
+    ),
+    {$in},
+    required={$required}
 ),
 
 COMMENT;

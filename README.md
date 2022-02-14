@@ -27,7 +27,17 @@ Small annotations can be used instead of the very large PHPSwagger format commen
 
 By writing in each method of Controller, PHPSwagger style annotations are automatically generated from FormRequest and routing.
 
+### FormRequest
+ * `@property {TYPE} {VARIABLE NAME} {DESCRIPTION}`
+ * `@property-read {TYPE} {VARIABLE NAME} {DESCRIPTION}`
 
+   Describes the parameters to be received in the request, the same as property in PHP Doc
+
+ * `@openapi-in {REQUEST IN} {VARIABLE NAME}`
+   Specify the parameter location for the in field.
+   If it is not specified, in="query" will be given.
+
+### Controller
  * `@openapi`
 
    Describes if you want to include the `openapi:swagger-commen` target.
