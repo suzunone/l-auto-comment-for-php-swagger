@@ -85,6 +85,13 @@ By writing in each method of Controller, [Swagger-PHP](https://github.com/zircot
 
    Toggle whether to use CSRF headers.
 
+ * `@openapi-security {securityScheme} {SCOPES(comma-separated)}`
+ * `@openapi-security {Security setting json}`
+
+   Security settings to use
+
+
+
 
 ### A very simple example
 ```php
@@ -151,3 +158,36 @@ By writing in each method of Controller, [Swagger-PHP](https://github.com/zircot
 ```
 @openapi-response 200 #/components/schemas/ExampleModel&foo_model[#/components/schemas/FooModel]&foo_model[bar_mode]=#/components/schemas/BarModel
 ```
+
+# Schema pattern of auto-generated Model
+## Create{ModelName}
+Excluding columns with auto-increment.
+Except for references to other models.
+
+## Create{ModelName}WithRelation
+Excluding columns with auto-increment.
+Include references to other models.
+
+## {ModelName}
+Include auto-incrementing columns.
+Except for references to other models.
+
+## {ModelName}WithRelation
+Include auto-incrementing columns.
+Include references to other models.
+
+## {ModelName}Many
+Array of models.
+Except for references to other models.
+
+## {ModelName}WithRelationMany
+Array of models.
+Include references to other models.
+
+## {ModelName}Paginate
+Pagination of models.
+Except for references to other models.
+
+## {ModelName}WithRelationPaginate
+Pagination of models.
+Include references to other models.

@@ -52,8 +52,8 @@ class SwaggerComment extends Command
      * Execute the console command.
      *
      * @param \Illuminate\Routing\Router $Router
-     * @throws \JsonException
      * @throws \ReflectionException
+     * @throws \JsonException
      * @return int
      */
     public function handle(Router $Router)
@@ -159,7 +159,20 @@ COMMENT;
         if (isset($annotation['openapi-security'])) {
             $security .= 'security={';
             foreach ($annotation['openapi-security'] as $item) {
-                $security .= (implode(' ', $item)) . ',';
+                $item = trim(implode(' ', $item));
+                if (stripos($item, '{') === 0) {
+                    $security .= $item . ',';
+
+                    continue;
+                }
+                $item = preg_split('/ +/', $item, 2);
+                if (!isset($item[1])) {
+                    $security .= '{"' . $item[0] . '" : {}},';
+
+                    continue;
+                }
+
+                $security .= '{"' . $item[0] . '" : {"' . implode('","', explode(',', $item[1])) . '"}},';
             }
             $security .= '},';
 

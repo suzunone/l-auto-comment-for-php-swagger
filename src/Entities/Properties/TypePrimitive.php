@@ -12,7 +12,7 @@ use AutoCommentForPHPSwagger\Libs\EmptyExample;
 /**
  *
  */
-class TypePrimitive extends PropertyBase
+class TypePrimitive extends PropertyBase implements PrimitivePropertyInterface
 {
     public function comment(): string
     {

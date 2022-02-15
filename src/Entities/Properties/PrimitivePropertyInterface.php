@@ -8,8 +8,9 @@
 namespace AutoCommentForPHPSwagger\Entities\Properties;
 
 /**
+ * Interface PrimitivePropertyInterface
  *
  */
-class TypeArray extends TypeRefArray implements PrimitivePropertyInterface
+interface PrimitivePropertyInterface
 {
 }

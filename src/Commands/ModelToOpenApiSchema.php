@@ -8,10 +8,12 @@
 namespace AutoCommentForPHPSwagger\Commands;
 
 use AutoCommentForPHPSwagger\Commands\Traits\CommentFormatter;
+use AutoCommentForPHPSwagger\Entities\Properties\PrimitivePropertyInterface;
 use AutoCommentForPHPSwagger\Entities\Properties\PropertyInterface;
 use AutoCommentForPHPSwagger\Entities\Properties\TypeArray;
 use AutoCommentForPHPSwagger\Entities\Properties\TypePrimitive;
 use AutoCommentForPHPSwagger\Entities\Properties\TypeRef;
+use AutoCommentForPHPSwagger\Entities\Properties\TypeRefArray;
 use AutoCommentForPHPSwagger\Libs\EmptyExample;
 use Barryvdh\LaravelIdeHelper\Console\ModelsCommand;
 use Illuminate\Database\Eloquent\Model;
@@ -186,8 +188,10 @@ class ModelToOpenApiSchema extends ModelsCommand
                 $hidden = $hidden->getValue(new $name);
 
                 $OARequired = [];
+                $primitive_only_OARequired = [];
                 $properties = '';
                 $properties_doc_comments = '';
+                $primitive_only_properties_doc_comments = '';
                 $ai = '';
                 foreach ($this->properties as $VariableName => $property) {
                     $TypeProperty = $property['type'];
@@ -242,7 +246,7 @@ class ModelToOpenApiSchema extends ModelsCommand
 
                                 $api_example_property_name = $this->laravel['config']->get($this->config_root . 'api_example_property_name', 'api_example');
                                 $example = (array)$model->{$api_example_property_name};
-                                $propertyAnnotation = new TypeArray($VariableName);
+                                $propertyAnnotation = new TypeRefArray($VariableName);
                                 $propertyAnnotation->setRef('#/components/schemas/' . substr($type, strrpos($type, "\\") + 1));
                                 $propertyAnnotation->setExample($example[$VariableName][0] ?? new EmptyExample);
                                 $propertyAnnotation->setDescription($property['comment'] ?? '');
@@ -275,7 +279,7 @@ class ModelToOpenApiSchema extends ModelsCommand
                     } else {
                         $TypeProperty = 'string';
                     }
-                    
+
                     if ($model->incrementing && $model->getKeyName() === $VariableName) {
                         $ai = str_replace(['DOC_COMMENT', 'VariableName'], [trim('@var ' . $property['type']), $VariableName], file_get_contents($this->getStub('oa_property')));
 
@@ -294,6 +298,11 @@ class ModelToOpenApiSchema extends ModelsCommand
 
                     $properties_doc_comment = $propertyAnnotation->comment();
                     $properties_doc_comments .= $properties_doc_comment;
+                    if ($propertyAnnotation instanceof PrimitivePropertyInterface) {
+                        $primitive_only_properties_doc_comments .= $properties_doc_comment;
+                        $primitive_only_OARequired[] = '"' . $VariableName . '"';
+                    }
+
                     $properties .= str_replace(['DOC_COMMENT', 'VariableName'], [trim('@var ' . $property['type']), $VariableName], file_get_contents($this->getStub('oa_property')));
 
                     $OARequired[] = '"' . $VariableName . '"';
@@ -301,13 +310,15 @@ class ModelToOpenApiSchema extends ModelsCommand
 
                 $schema = file_get_contents($this->getStub('oa_schema'));
 
-                $MainClassAnnotation = $this->createMainClassAnnotation($reflectionClass->getShortName(), join(',', $OARequired), $properties_doc_comments);
+                $MainClassAnnotation = $this->withRelateMainClassAnnotation($reflectionClass->getShortName(), join(',', $OARequired), $properties_doc_comments);
+
+                $NoRelateClassAnnotation = $this->createMainClassAnnotation($reflectionClass->getShortName(), join(',', $primitive_only_OARequired), $primitive_only_properties_doc_comments);
 
                 $ListClassAnnotation = $this->createListClassAnnotation($reflectionClass->getShortName(), $model->incrementing ? $model->getKeyName() : null);
 
                 $schema = str_replace(
                     ['// properties //', '// ai_properties //', 'ClassName', 'OARequired', '__Namespaces__', 'MAIN_CLASS_ANNOTATION', 'LIST_CLASS_ANNOTATION'],
-                    [$properties, $ai, $reflectionClass->getShortName(), join(',', $OARequired), $this->laravel['config']->get($this->config_root . 'schema_name_space'), $this->commentFormatter(trim($MainClassAnnotation)), $this->commentFormatter(trim($ListClassAnnotation))],
+                    [$properties, $ai, $reflectionClass->getShortName(), join(',', $OARequired), $this->laravel['config']->get($this->config_root . 'schema_name_space'), $this->commentFormatter(trim($MainClassAnnotation . $NoRelateClassAnnotation)), $this->commentFormatter(trim($ListClassAnnotation))],
                     $schema
                 );
 
@@ -319,6 +330,7 @@ class ModelToOpenApiSchema extends ModelsCommand
                 }
 
                 $output .= $MainClassAnnotation;
+                $output .= $NoRelateClassAnnotation;
                 $output .= $ListClassAnnotation;
 
                 // $output .= $this->createPhpDocs($name);
@@ -378,7 +390,7 @@ class ModelToOpenApiSchema extends ModelsCommand
             if (is_array($example)) {
                 $example_first = $example[0] ?? null;
                 if ($example_first instanceof Model) {
-                    $res = new TypeArray($name);
+                    $res = new TypeRefArray($name);
                     $res->setRef('#/components/schemas/' . substr(get_class($example_first), strrpos(get_class($example_first), "\\") + 1));
 
                     return $res;
@@ -433,6 +445,19 @@ class ModelToOpenApiSchema extends ModelsCommand
 COMMENT;
     }
 
+    protected function withRelateMainClassAnnotation($schema_name, $required, $all_of = ''): string
+    {
+        return <<<COMMENT
+@OA\\Schema(
+    schema="Create{$schema_name}WithRelate",
+    required={{$required}},
+    type="object",
+    {$all_of}
+)
+
+COMMENT;
+    }
+
     protected function createListClassAnnotation($schema_name, $ai = 'id'): string
     {
         if ($ai) {
@@ -449,11 +474,31 @@ COMMENT;
   }
 )
 
+@OA\\Schema(
+  schema="{$schema_name}WithRelate",
+  type="object",
+  allOf={
+      @OA\\Schema(ref="#/components/schemas/Create{$schema_name}WithRelate"),
+      @OA\\Schema(
+          required={"{$ai}"},
+          @OA\\Property(property="{$ai}", format="int64", type="integer", description="ID")
+      )
+  }
+)
+
 COMMENT;
         } else {
             $comment = <<<COMMENT
 @OA\\Schema(
   schema="{$schema_name}",
+  type="object",
+  allOf={
+      @OA\\Schema(ref="#/components/schemas/Create{$schema_name}"),
+  }
+)
+
+@OA\\Schema(
+  schema="{$schema_name}WithRelate",
   type="object",
   allOf={
       @OA\\Schema(ref="#/components/schemas/Create{$schema_name}"),
@@ -476,6 +521,64 @@ COMMENT;
     )
   }
 )
+
+@OA\\Schema(
+  schema="{$schema_name}WithRelatePaginateLink",
+  type="object",
+  allOf={
+    @OA\\Schema(
+         required={"url", "label", "active"},
+         @OA\\Property(property="label", type="string"),
+         @OA\\Property(property="url", type="string"),
+         @OA\\Property(property="active", type="boolean"),
+    )
+  }
+)
+
+@OA\\Schema(
+     schema="{$schema_name}WithRelatePaginate",
+     type="object",
+     allOf={
+         @OA\\Schema(
+             required={"data","current_page", "from", "last_page", "per_page", "to", "total", "first_page_url", "last_page_url", "path", "prev_page_url", "links"},
+             @OA\\Property(
+                 property="data",
+                 type="array",
+                 @OA\\Items(
+                     ref="#/components/schemas/{$schema_name}WithRelate"
+                 )
+             ),
+             @OA\\Property(property="current_page", format="int64", type="integer"),
+             @OA\\Property(property="from", format="int64", type="integer"),
+             @OA\\Property(property="last_page", format="int64", type="integer"),
+             @OA\\Property(property="per_page", format="int64", type="integer"),
+             @OA\\Property(property="to", format="int64", type="integer"),
+             @OA\\Property(property="total", format="int64", type="integer"),
+             @OA\\Property(property="first_page_url", type="string"),
+             @OA\\Property(property="last_page_url", type="string"),
+             @OA\\Property(property="next_page_url", type="string"),
+             @OA\\Property(property="path", type="string"),
+             @OA\\Property(property="prev_page_url", type="string"),
+
+             @OA\\Property(
+                 property="links",
+                 type="array",
+                 @OA\\Items(
+                     ref="#/components/schemas/{$schema_name}WithRelatePaginateLink"
+                 )
+             ),
+         ),
+     }
+)
+
+@OA\\Schema(
+     schema="{$schema_name}WithRelateMany",
+     type="array",
+     @OA\\Items(
+         ref="#/components/schemas/{$schema_name}WithRelate"
+     )
+)
+
 
 @OA\\Schema(
      schema="{$schema_name}Paginate",

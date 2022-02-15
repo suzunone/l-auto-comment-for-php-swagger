@@ -12,15 +12,6 @@ namespace AutoCommentForPHPSwagger\Entities\Properties;
  *
  * Class PropertyInterface
  *
- * @category   codingTests
- * @subpackage ${NAMESPACE}
- * @author     suzunone<suzunone.eleven@gmail.com>
- * @copyright  Project codingTests
- * @license    BSD 3-Clause License
- * @version    1.0
- * @link       https://github.com/suzunone/codingTests
- * @see        https://github.com/suzunone/codingTests
- * @since      2022/02/15
  */
 interface PropertyInterface
 {
