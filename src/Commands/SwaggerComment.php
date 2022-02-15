@@ -49,8 +49,8 @@ class SwaggerComment extends Command
      * Execute the console command.
      *
      * @param \Illuminate\Routing\Router $Router
-     * @throws \JsonException
      * @throws \ReflectionException
+     * @throws \JsonException
      * @return int
      */
     public function handle(Router $Router)
@@ -409,6 +409,15 @@ COMMENT;
 
         $reflection = new ReflectionClass($class_name);
 
+        try {
+            $rules = $reflection->getMethod('rules')->invoke(new $class_name);
+            $rules = array_map(function ($item) {
+                return explode('|', $item);
+            }, $rules);
+        } catch (\Exception $exception) {
+            $rules = [];
+        }
+
         preg_match_all('/@openapi-in (.*)/', $reflection->getDocComment(), $in_match);
 
         $in_list = [];
@@ -429,7 +438,10 @@ COMMENT;
 
             $required = strpos($property[0], 'null') !== false ? 'false' : 'true';
             $format = 'format="any"';
-            if (stripos($property[0], 'string[]') !== false) {
+
+            if (isset($rules[$property[1]]) && in_array('file', $rules[$property[1]])) {
+                $format = 'type="string",format="binary"';
+            } elseif (stripos($property[0], 'string[]') !== false) {
                 $format = 'type="array",@OA\Items(type="string")';
             } elseif (stripos($property[0], 'integer[]') !== false) {
                 $format = 'type="array",@OA\Items(type="integer")';
@@ -471,6 +483,40 @@ COMMENT;
     ),
     {$in},
     required={$required}
+),
+
+COMMENT;
+        }
+
+        // request body
+        preg_match_all('/@openapi-content (.*)/', $reflection->getDocComment(), $content_match);
+        if (!empty($content_match[1])) {
+            $response_media_types = '';
+            $response_description = '';
+
+            foreach ($content_match[1] as $request_body) {
+                $request_body = preg_split('/ +/', $request_body, 3);
+                $request_body[0] = $request_body[0] ?? 'application/json';
+                $request_body[1] = $request_body[1] ?? 'binary';
+                $response_description = $request_body[2] ?? 'Upload File';
+                $response_media_types .= <<<COMMENT
+
+ @OA\\MediaType(
+     mediaType="{$request_body[0]}",
+     @OA\\Schema(
+         type="string",
+         format="{$request_body[1]}"
+     )
+ ),
+
+COMMENT;
+            }
+
+            $comment .= <<<COMMENT
+@OA\\RequestBody(
+ description="${response_description}",
+{$response_media_types}
+
 ),
 
 COMMENT;
