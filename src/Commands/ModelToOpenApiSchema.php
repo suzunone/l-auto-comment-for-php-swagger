@@ -8,6 +8,10 @@
 namespace AutoCommentForPHPSwagger\Commands;
 
 use AutoCommentForPHPSwagger\Commands\Traits\CommentFormatter;
+use AutoCommentForPHPSwagger\Entities\Properties\PropertyInterface;
+use AutoCommentForPHPSwagger\Entities\Properties\TypeArray;
+use AutoCommentForPHPSwagger\Entities\Properties\TypePrimitive;
+use AutoCommentForPHPSwagger\Entities\Properties\TypeRef;
 use AutoCommentForPHPSwagger\Libs\EmptyExample;
 use Barryvdh\LaravelIdeHelper\Console\ModelsCommand;
 use Illuminate\Database\Eloquent\Model;
@@ -187,9 +191,6 @@ class ModelToOpenApiSchema extends ModelsCommand
                 $ai = '';
                 foreach ($this->properties as $VariableName => $property) {
                     $TypeProperty = $property['type'];
-                    if (strpos($TypeProperty, "\\") !== false) {
-                        continue;
-                    }
 
                     if ($property['read'] === false) {
                         continue;
@@ -206,34 +207,75 @@ class ModelToOpenApiSchema extends ModelsCommand
                     );
 
                     $_TypeProperty = $TypeProperty;
+                    $propertyAnnotation = null;
+
+                    if (strpos($TypeProperty, "\\") !== false) {
+                        if (strpos($_TypeProperty, '\\Collection') === false) {
+                            foreach (explode(',', $_TypeProperty) as $type) {
+                                $type = str_replace(['[', ']'], '', $type);
+                                if (!class_exists($type)) {
+                                    continue;
+                                }
+                                $reflectionTypeClass = new ReflectionClass($type);
+                                if (!$reflectionTypeClass->isSubclassOf(Model::class)) {
+                                    continue;
+                                }
+
+                                $api_example_property_name = $this->laravel['config']->get($this->config_root . 'api_example_property_name', 'api_example');
+                                $example = (array)$model->{$api_example_property_name};
+                                $propertyAnnotation = new TypeRef($VariableName);
+                                $propertyAnnotation->setRef('#/components/schemas/' . substr($type, strrpos($type, "\\") + 1));
+                                $propertyAnnotation->setExample($example[$VariableName] ?? new EmptyExample);
+                                $propertyAnnotation->setDescription($property['comment'] ?? '');
+                                goto set_property;
+                            }
+                        } else {
+                            foreach (explode(',', $_TypeProperty) as $type) {
+                                $type = str_replace(['[', ']'], '', $type);
+                                if (!class_exists($type)) {
+                                    continue;
+                                }
+                                $reflectionTypeClass = new ReflectionClass($type);
+                                if (!$reflectionTypeClass->isSubclassOf(Model::class)) {
+                                    continue;
+                                }
+
+                                $api_example_property_name = $this->laravel['config']->get($this->config_root . 'api_example_property_name', 'api_example');
+                                $example = (array)$model->{$api_example_property_name};
+                                $propertyAnnotation = new TypeArray($VariableName);
+                                $propertyAnnotation->setRef('#/components/schemas/' . substr($type, strrpos($type, "\\") + 1));
+                                $propertyAnnotation->setExample($example[$VariableName][0] ?? new EmptyExample);
+                                $propertyAnnotation->setDescription($property['comment'] ?? '');
+
+                                goto set_property;
+                            }
+                        }
+                    }
+
                     if (strpos($_TypeProperty, 'integer') !== false) {
-                        $TypeProperty = '"integer"';
+                        $TypeProperty = 'integer';
                     } elseif (strpos($_TypeProperty, 'double') !== false) {
-                        $TypeProperty = '"number"';
+                        $TypeProperty = 'number';
                     } elseif (strpos($_TypeProperty, 'float') !== false) {
-                        $TypeProperty = '"number"';
+                        $TypeProperty = 'number';
                     } elseif (strpos($_TypeProperty, 'string') !== false) {
-                        $TypeProperty = '"string"';
+                        $TypeProperty = 'string';
                     } elseif (strpos($_TypeProperty, 'boolean') !== false) {
-                        $TypeProperty = '"boolean"';
+                        $TypeProperty = 'boolean';
                     } elseif (strpos($_TypeProperty, 'bool') !== false) {
-                        $TypeProperty = '"bool"';
+                        $TypeProperty = 'bool';
                     } elseif (strpos($_TypeProperty, 'array') !== false) {
-                        $TypeProperty = '"array"';
-                    } elseif (strpos($_TypeProperty, 'Carbon') !== false) {
-                        $TypeProperty = '"datetime"';
+                        $TypeProperty = 'array';
+                    } elseif (strpos($_TypeProperty, '\\Carbon') !== false) {
+                        $TypeProperty = 'datetime';
                     } elseif (strpos($_TypeProperty, 'datetime') !== false) {
-                        $TypeProperty = '"datetime"';
+                        $TypeProperty = 'datetime';
                     } elseif (strpos($_TypeProperty, 'timestamp') !== false) {
-                        $TypeProperty = '"datetime"';
+                        $TypeProperty = 'datetime';
                     } else {
-                        $TypeProperty = '"string"';
+                        $TypeProperty = 'string';
                     }
-
-                    if (strpos($_TypeProperty, 'null')) {
-                        $TypeProperty .= ',nullable=true';
-                    }
-
+                    
                     if ($model->incrementing && $model->getKeyName() === $VariableName) {
                         $ai = str_replace(['DOC_COMMENT', 'VariableName'], [trim('@var ' . $property['type']), $VariableName], file_get_contents($this->getStub('oa_property')));
 
@@ -242,11 +284,19 @@ class ModelToOpenApiSchema extends ModelsCommand
 
                     $api_example_property_name = $this->laravel['config']->get($this->config_root . 'api_example_property_name', 'api_example');
                     $example = (array)$model->{$api_example_property_name};
-                    $OARequired[] = '"' . $VariableName . '"';
 
-                    $properties_doc_comment = $this->createPropertyAnnotation($VariableName, $TypeProperty, $property['comment'], array_key_exists($VariableName, $example) ? $example[$VariableName] : new EmptyExample());
+                    $propertyAnnotation = $this->createPropertyAnnotation($VariableName, $TypeProperty, $property['comment'], array_key_exists($VariableName, $example) ? $example[$VariableName] : new EmptyExample());
+
+                    set_property:
+                    if (strpos($_TypeProperty, 'null')) {
+                        $propertyAnnotation->setNullable(true);
+                    }
+
+                    $properties_doc_comment = $propertyAnnotation->comment();
                     $properties_doc_comments .= $properties_doc_comment;
                     $properties .= str_replace(['DOC_COMMENT', 'VariableName'], [trim('@var ' . $property['type']), $VariableName], file_get_contents($this->getStub('oa_property')));
+
+                    $OARequired[] = '"' . $VariableName . '"';
                 }
 
                 $schema = file_get_contents($this->getStub('oa_schema'));
@@ -321,43 +371,53 @@ class ModelToOpenApiSchema extends ModelsCommand
      * @param mixed $example
      * @throws \JsonException
      */
-    protected function createPropertyAnnotation(string $name, string $TypeProperty, string $TypeDescription, $example): string
+    protected function createPropertyAnnotation(string $name, string $TypeProperty, string $TypeDescription, $example): PropertyInterface
     {
         $item = '';
-        if (strpos($TypeProperty, 'array')) {
-            $array_type = 'type="any"';
+        if (strpos($TypeProperty, 'array') !== false) {
             if (is_array($example)) {
                 $example_first = $example[0] ?? null;
+                if ($example_first instanceof Model) {
+                    $res = new TypeArray($name);
+                    $res->setRef('#/components/schemas/' . substr(get_class($example_first), strrpos(get_class($example_first), "\\") + 1));
+
+                    return $res;
+                }
                 if (is_string($example_first)) {
-                    $array_type = 'type="string", example="' . $example_first . '"';
+                    $res = new TypeArray($name);
+                    $res->setType('string');
+                    $res->setExample($example_first);
+
+                    return $res;
                 }
                 if (is_int($example_first)) {
-                    $array_type = 'type="integer", example="' . $example_first . '"';
+                    $res = new TypeArray($name);
+                    $res->setType('integer');
+                    $res->setExample($example_first);
+
+                    return $res;
                 }
                 if (is_float($example_first)) {
-                    $array_type = 'type="number", example="' . $example_first . '"';
+                    $res = new TypeArray($name);
+                    $res->setType('number');
+                    $res->setExample($example_first);
+
+                    return $res;
                 }
-                if ($example_first instanceof Model) {
-                    $array_type = 'ref="#/components/schemas/' . substr(get_class($example_first), strrpos(get_class($example_first), "\\") + 1) . '"';
-                }
+                $res = new TypeArray($name);
+                $res->setType('any');
+                $res->setExample($example_first);
+
+                return $res;
             }
-
-            $item = ',@OA\Items(' . $array_type . ')';
-        }
-        if ($example instanceof EmptyExample || !empty($item)) {
-            $comment = <<<COMMENT
-@OA\\Property(property="{$name}", type={$TypeProperty},description="{$TypeDescription}"{$item}),
-
-COMMENT;
-        } else {
-            $example = json_encode($example, JSON_THROW_ON_ERROR);
-            $comment = <<<COMMENT
-@OA\\Property(property="{$name}", type={$TypeProperty},description="{$TypeDescription}",example={$example}{$item}),
-
-COMMENT;
         }
 
-        return $comment;
+        $res = new TypePrimitive($name);
+        $res->setExample($example);
+        $res->setType($TypeProperty);
+        $res->setDescription($TypeDescription);
+
+        return $res;
     }
 
     protected function createMainClassAnnotation($schema_name, $required, $all_of = ''): string
