@@ -209,19 +209,19 @@ COMMENT;
                 case 'json':
                 case 'jsoncontent':
                 case 'json-content':
-                $response_type[$response][] = new JsonContent();
+                    $response_type[$response][] = new JsonContent();
 
                     break;
                 case 'xml':
                 case 'xmlcontent':
                 case 'xml-content':
-                $response_type[$response][] = new XmlContent();
+                    $response_type[$response][] = new XmlContent();
 
                     break;
                 case 'media':
                 case 'mediatype':
                 case 'media-type':
-                $response_type[$response][] = new MediaType(array_shift($res_type));
+                    $response_type[$response][] = new MediaType(array_shift($res_type));
 
                     break;
             }
@@ -231,6 +231,20 @@ COMMENT;
         foreach ($annotation['openapi-response'] ?? [] as $os_res) {
             $response = array_shift($os_res);
             $ref = array_shift($os_res);
+
+            if (stripos($ref, '#') === false && stripos($ref, '&') === false) {
+                $description = $ref . ' ' . implode(' ', $os_res);
+                $comment .= <<<COMMENT
+@OA\\Response(
+    response="{$response}",
+    description="{$description}",
+),
+
+COMMENT;
+
+                continue;
+            }
+
             $description = implode(' ', $os_res);
             // simple response
             if (stripos($ref, '&') === false) {
