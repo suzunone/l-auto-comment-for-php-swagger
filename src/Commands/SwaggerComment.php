@@ -429,7 +429,21 @@ COMMENT;
 
             $required = strpos($property[0], 'null') !== false ? 'false' : 'true';
             $format = 'format="any"';
-            if (stripos($property[0], 'int') !== false) {
+            if (stripos($property[0], 'string[]') !== false) {
+                $format = 'type="array",@OA\Items(type="string")';
+            } elseif (stripos($property[0], 'integer[]') !== false) {
+                $format = 'type="array",@OA\Items(type="integer")';
+            } elseif (stripos($property[0], 'int[]') !== false) {
+                $format = 'type="array",@OA\Items(type="integer")';
+            } elseif (stripos($property[0], 'float[]') !== false) {
+                $format = 'type="array",@OA\Items(type="number")';
+            } elseif (stripos($property[0], 'double[]') !== false) {
+                $format = 'type="array",@OA\Items(type="number")';
+            } elseif (stripos($property[0], 'Carbon[]') !== false) {
+                $format = 'type="array",@OA\Items(type="datetime")';
+            } elseif (stripos($property[0], 'datetime[]') !== false) {
+                $format = 'type="array",@OA\Items(type="datetime")';
+            } elseif (stripos($property[0], 'int') !== false) {
                 $format = 'format="int64",type="integer"';
             } elseif (stripos($property[0], 'bool') !== false) {
                 $format = 'type="boolean"';
@@ -441,20 +455,6 @@ COMMENT;
                 $format = 'type="number"';
             } elseif (stripos($property[0], 'double') !== false) {
                 $format = 'type="number"';
-            } elseif (stripos($property[0], 'string[]') !== false) {
-                $format = 'type="array",@OA\Items(string)';
-            } elseif (stripos($property[0], 'integer[]') !== false) {
-                $format = 'type="array",@OA\Items(integer)';
-            } elseif (stripos($property[0], 'int[]') !== false) {
-                $format = 'type="array",@OA\Items(integer)';
-            } elseif (stripos($property[0], 'float[]') !== false) {
-                $format = 'type="array",@OA\Items(number)';
-            } elseif (stripos($property[0], 'double[]') !== false) {
-                $format = 'type="array",@OA\Items(number)';
-            } elseif (stripos($property[0], 'Carbon[]') !== false) {
-                $format = 'type="array",@OA\Items(datetime)';
-            } elseif (stripos($property[0], 'datetime[]') !== false) {
-                $format = 'type="array",@OA\Items(datetime)';
             }
 
             $in = 'in="query"';
