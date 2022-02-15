@@ -10,6 +10,7 @@ namespace AutoCommentForPHPSwagger\Commands;
 use AutoCommentForPHPSwagger\Commands\Traits\CommentFormatter;
 use AutoCommentForPHPSwagger\Libs\EmptyExample;
 use Barryvdh\LaravelIdeHelper\Console\ModelsCommand;
+use Illuminate\Database\Eloquent\Model;
 use ReflectionClass;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
@@ -39,7 +40,7 @@ class ModelToOpenApiSchema extends ModelsCommand
     protected $schema_path = '';
 
     protected $write_model_magic_where = true;
-    protected $write_model_relation_count_properties = true;
+    protected $write_model_relation_count_properties = false;
 
     /**
      * Execute the console command.
@@ -57,6 +58,8 @@ class ModelToOpenApiSchema extends ModelsCommand
 
             return -1;
         }
+
+        $this->write_model_relation_count_properties = $this->laravel['config']->get($this->config_root . 'write_model_relation_count_properties ', false);
 
         $this->filename = $this->laravel['config']->get($this->config_root . 'schemas_filename', null);
         $this->filename = $this->option('filename') ?? $this->filename;
@@ -198,7 +201,7 @@ class ModelToOpenApiSchema extends ModelsCommand
 
                     $TypeProperty = str_replace(
                         ['timestamp', 'date', 'datetime', 'int', 'bool', 'boolbool', '|'],
-                        ['string', 'string', 'string', 'integer', 'boolean', 'bool', ','],
+                        ['datetime', 'string', 'datetime', 'integer', 'boolean', 'bool', ','],
                         $TypeProperty
                     );
 
@@ -213,10 +216,16 @@ class ModelToOpenApiSchema extends ModelsCommand
                         $TypeProperty = '"string"';
                     } elseif (strpos($_TypeProperty, 'boolean') !== false) {
                         $TypeProperty = '"boolean"';
+                    } elseif (strpos($_TypeProperty, 'bool') !== false) {
+                        $TypeProperty = '"bool"';
                     } elseif (strpos($_TypeProperty, 'array') !== false) {
                         $TypeProperty = '"array"';
                     } elseif (strpos($_TypeProperty, 'Carbon') !== false) {
-                        $TypeProperty = '"string"';
+                        $TypeProperty = '"datetime"';
+                    } elseif (strpos($_TypeProperty, 'datetime') !== false) {
+                        $TypeProperty = '"datetime"';
+                    } elseif (strpos($_TypeProperty, 'timestamp') !== false) {
+                        $TypeProperty = '"datetime"';
                     } else {
                         $TypeProperty = '"string"';
                     }
@@ -225,15 +234,15 @@ class ModelToOpenApiSchema extends ModelsCommand
                         $TypeProperty .= ',nullable=true';
                     }
 
-                    $api_example_property_name = $this->laravel['config']->get($this->config_root . 'api_example_property_name', 'api_example');
-                    $example = (array)$model->{$api_example_property_name};
-                    $OARequired[] = '"' . $VariableName . '"';
-
                     if ($model->incrementing && $model->getKeyName() === $VariableName) {
                         $ai = str_replace(['DOC_COMMENT', 'VariableName'], [trim('@var ' . $property['type']), $VariableName], file_get_contents($this->getStub('oa_property')));
 
                         continue;
                     }
+
+                    $api_example_property_name = $this->laravel['config']->get($this->config_root . 'api_example_property_name', 'api_example');
+                    $example = (array)$model->{$api_example_property_name};
+                    $OARequired[] = '"' . $VariableName . '"';
 
                     $properties_doc_comment = $this->createPropertyAnnotation($VariableName, $TypeProperty, $property['comment'], array_key_exists($VariableName, $example) ? $example[$VariableName] : new EmptyExample());
                     $properties_doc_comments .= $properties_doc_comment;
@@ -314,15 +323,36 @@ class ModelToOpenApiSchema extends ModelsCommand
      */
     protected function createPropertyAnnotation(string $name, string $TypeProperty, string $TypeDescription, $example): string
     {
-        if ($example instanceof EmptyExample) {
+        $item = '';
+        if (strpos($TypeProperty, 'array')) {
+            $array_type = 'type="any"';
+            if (is_array($example)) {
+                $example_first = $example[0] ?? null;
+                if (is_string($example_first)) {
+                    $array_type = 'type="string", example="' . $example_first . '"';
+                }
+                if (is_int($example_first)) {
+                    $array_type = 'type="integer", example="' . $example_first . '"';
+                }
+                if (is_float($example_first)) {
+                    $array_type = 'type="number", example="' . $example_first . '"';
+                }
+                if ($example_first instanceof Model) {
+                    $array_type = 'ref="#/components/schemas/' . substr(get_class($example_first), strrpos(get_class($example_first), "\\") + 1) . '"';
+                }
+            }
+
+            $item = ',@OA\Items(' . $array_type . ')';
+        }
+        if ($example instanceof EmptyExample || !empty($item)) {
             $comment = <<<COMMENT
-@OA\\Property(property="{$name}", type={$TypeProperty},description="{$TypeDescription}"),
+@OA\\Property(property="{$name}", type={$TypeProperty},description="{$TypeDescription}"{$item}),
 
 COMMENT;
         } else {
             $example = json_encode($example, JSON_THROW_ON_ERROR);
             $comment = <<<COMMENT
-@OA\\Property(property="{$name}", type={$TypeProperty},description="{$TypeDescription}",example={$example}),
+@OA\\Property(property="{$name}", type={$TypeProperty},description="{$TypeDescription}",example={$example}{$item}),
 
 COMMENT;
         }
@@ -354,7 +384,7 @@ COMMENT;
       @OA\\Schema(ref="#/components/schemas/Create{$schema_name}"),
       @OA\\Schema(
           required={"{$ai}"},
-          @OA\\Property(property="{$ai}", format="int64", type="integer")
+          @OA\\Property(property="{$ai}", format="int64", type="integer", description="ID")
       )
   }
 )

@@ -49,8 +49,8 @@ class SwaggerComment extends Command
      * Execute the console command.
      *
      * @param \Illuminate\Routing\Router $Router
-     * @throws \ReflectionException
      * @throws \JsonException
+     * @throws \ReflectionException
      * @return int
      */
     public function handle(Router $Router)
@@ -140,12 +140,22 @@ operationId="{$operationId}",
 path="/{$route_item['uri']}",
 description="{$description}",
 
-
 COMMENT;
 
         if (!isset($annotation['openapi-ignore-cookie'])) {
             $cookie_name = $annotation['openapi-cookie'][0][0] ?? $this->laravel['config']->get($this->config_root . 'session_cookie_name', 'session_cookie');
             $comment .= $this->getCookie($cookie_name, isset($annotation['openapi-ignore-session-cookie']), isset($annotation['openapi-ignore-csrf-cookie']));
+        }
+
+        $security = '';
+        if (isset($annotation['openapi-security'])) {
+            $security .= 'security={';
+            foreach ($annotation['openapi-security'] as $item) {
+                $security .= (implode(' ', $item)) . ',';
+            }
+            $security .= '},';
+
+            $comment .= $security . "\n";
         }
 
         foreach ($route_item['attributes'] as $attribute) {
@@ -159,7 +169,6 @@ COMMENT;
         $comment .= $this->makeResponseTag($annotation, $route_item['id']);
         $comment .= <<<'COMMENT'
 )
-
 
 COMMENT;
 

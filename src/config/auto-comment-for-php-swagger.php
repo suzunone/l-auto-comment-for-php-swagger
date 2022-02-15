@@ -28,6 +28,17 @@ return [
 
             /*
             |--------------------------------------------------------------------------
+            | Write Model relation count properties
+            |--------------------------------------------------------------------------
+            |
+            | Set to false to disable writing of relation count properties to model DocBlocks.
+            |
+            */
+
+            'write_model_relation_count_properties' => false,
+
+            /*
+            |--------------------------------------------------------------------------
             | Schemas filename
             |--------------------------------------------------------------------------
             |
