@@ -1,9 +1,9 @@
-# Auto-generate PHPSwagger comments from Laravel.
+# Auto-generate SwaggerPHP comments from Laravel.
 
 ## Description
 
-Auto-generate PHPSwagger comments from models.
-Automatically generate PHPSwagger comments using routing, form requests, and small annotations.
+Auto-generate [SwaggerPHP](https://github.com/zircote/swagger-php) comments from models.
+Automatically generate [SwaggerPHP](https://github.com/zircote/swagger-php)  comments using routing, form requests, and small annotations.
 
 
 ## Installation
@@ -16,16 +16,16 @@ php artisan vendor:publish --provider="AutoCommentForPHPSwagger\LAutoCommentForP
 
 ## Usage
  * `openapi:create-model-to-schema`
-   *  Create PHPSwagger schema file for models
+   *  Create [SwaggerPHP](https://github.com/zircote/swagger-php)  schema file for models
  * `openapi:file-to-annotation`
    * Create a comment definition from yaml or json
  * `openapi:swagger-commen` 
-   * Automatically generate comments for PHPSwagger
+   * Automatically generate comments for [SwaggerPHP](https://github.com/zircote/swagger-php) 
 
 ## openapi annotation
-Small annotations can be used instead of the very large PHPSwagger format comments.
+Small annotations can be used instead of the very large [SwaggerPHP](https://github.com/zircote/swagger-php)  format comments.
 
-By writing in each method of Controller, PHPSwagger style annotations are automatically generated from FormRequest and routing.
+By writing in each method of Controller, [SwaggerPHP](https://github.com/zircote/swagger-php)  style annotations are automatically generated from FormRequest and routing.
 
 ### FormRequest
  * `@property {TYPE} {VARIABLE NAME} {DESCRIPTION}`
