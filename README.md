@@ -37,6 +37,10 @@ By writing in each method of Controller, [Swagger-PHP](https://github.com/zircot
    Specify the parameter location for the in field.
    If it is not specified, in="query" will be given.
 
+ * `@openapi-content {MIME} {FORMAT} {DESCRIPTION}`
+   When using `request()->getContent()`, you can specify the contents of content.
+   You can specify more than one, but only one description will be used.
+
 ### Controller
  * `@openapi`
 
