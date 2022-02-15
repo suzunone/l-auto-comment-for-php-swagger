@@ -8,7 +8,9 @@
 namespace AutoCommentForPHPSwagger;
 
 use AutoCommentForPHPSwagger\Commands\FileToAnnotationComment;
+use AutoCommentForPHPSwagger\Commands\InfoComment;
 use AutoCommentForPHPSwagger\Commands\ModelToOpenApiSchema;
+use AutoCommentForPHPSwagger\Commands\SecurityComment;
 use AutoCommentForPHPSwagger\Commands\SwaggerComment;
 use Illuminate\Support\ServiceProvider;
 
@@ -47,6 +49,6 @@ class LAutoCommentForPHPSwaggerServiceProvider extends ServiceProvider
         );
 
         //Register commands
-        $this->commands([FileToAnnotationComment::class, ModelToOpenApiSchema::class, SwaggerComment::class]);
+        $this->commands([FileToAnnotationComment::class, ModelToOpenApiSchema::class, SwaggerComment::class, InfoComment::class, SecurityComment::class]);
     }
 }

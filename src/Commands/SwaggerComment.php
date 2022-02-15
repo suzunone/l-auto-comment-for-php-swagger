@@ -45,19 +45,25 @@ class SwaggerComment extends Command
 
     protected $add_schema = "";
 
+    protected $always_using_session_cookie = false;
+    protected $always_using_csrf_header = false;
+
     /**
      * Execute the console command.
      *
      * @param \Illuminate\Routing\Router $Router
-     * @throws \ReflectionException
      * @throws \JsonException
+     * @throws \ReflectionException
      * @return int
      */
     public function handle(Router $Router)
     {
         $type = $this->argument('type') ?? 'default';
         $this->config_root .= $type . '.';
-        $OpenApiDoc = $this->laravel['config']->get($this->config_root . 'ControllerName', OpenApiDoc::class);
+        $OpenApiDoc = $this->laravel['config']->get($this->config_root . 'controller_name', OpenApiDoc::class);
+
+        $this->always_using_session_cookie = $this->laravel['config']->get($this->config_root . 'always_using_session_cookie', false);
+        $this->always_using_csrf_header = $this->laravel['config']->get($this->config_root . 'always_using_csrf_header', false);
 
         // $this->call('make:controller', ['name' => 'Swagger/OpenApiDoc']);
         if (!class_exists($OpenApiDoc)) {
@@ -92,11 +98,13 @@ COMMENT;
 
         $stub = file_get_contents(__DIR__ . '/stubs/lg_swagger_controller.stub');
 
-        $stub = str_replace(['// OpenApiDoc //', '__Namespaces__'], [$comment, $namespace], $stub);
+        $stub = str_replace(['// OpenApiDoc //', '__Namespaces__', '__OpenApiDoc__'], [$comment, $namespace, $OpenApiDocRef->getShortName()], $stub);
 
         $file_name = (new ReflectionClass($OpenApiDoc))->getFileName();
         $this->info('write:' . $file_name);
         file_put_contents($file_name, $stub);
+
+        return 0;
     }
 
     /**
@@ -144,7 +152,7 @@ COMMENT;
 
         if (!isset($annotation['openapi-ignore-cookie'])) {
             $cookie_name = $annotation['openapi-cookie'][0][0] ?? $this->laravel['config']->get($this->config_root . 'session_cookie_name', 'session_cookie');
-            $comment .= $this->getCookie($cookie_name, isset($annotation['openapi-ignore-session-cookie']), isset($annotation['openapi-ignore-csrf-cookie']));
+            $comment .= $this->getCookie($cookie_name, $annotation);
         }
 
         $security = '';
@@ -546,10 +554,13 @@ COMMENT;
         })->all();
     }
 
-    protected function getCookie($cookie_name = 'session_cookie', $ignore_session_cookie = false, $ignore_csrf_cookie = false): string
+    protected function getCookie($cookie_name = 'session_cookie', array $annotation = []): string
     {
+        $using_session_cookie = (!isset($annotation['openapi-ignore-session-cookie']) && $this->always_using_session_cookie) || (isset($annotation['openapi-session-cookie']) && !$this->always_using_session_cookie);
+        $using_csrf_cookie = (!isset($annotation['openapi-ignore-csrf-header']) && $this->always_using_csrf_header) || (isset($annotation['openapi-csrf-header']) && !$this->always_using_csrf_header);
+
         $comment = '';
-        if (!$ignore_session_cookie) {
+        if ($using_session_cookie) {
             $comment .= <<<Comment
 @OA\\Parameter(
 name="{$cookie_name}",
@@ -563,7 +574,7 @@ required=false
 
 Comment;
         }
-        if (!$ignore_csrf_cookie) {
+        if ($using_csrf_cookie) {
             $comment .= <<<'Comment'
 @OA\Parameter(
 name="X-CSRF-TOKEN",

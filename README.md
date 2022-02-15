@@ -15,6 +15,10 @@ php artisan vendor:publish --provider="AutoCommentForPHPSwagger\LAutoCommentForP
 ```
 
 ## Usage
+ * `openapi:info-comment`
+   * Create OA\Info file
+ * `openapi:security-comment`
+   * Create Security Setting file
  * `openapi:create-model-to-schema`
    *  Create [Swagger-PHP](https://github.com/zircote/swagger-php)  schema file for models
  * `openapi:file-to-annotation`
@@ -72,12 +76,14 @@ By writing in each method of Controller, [Swagger-PHP](https://github.com/zircot
     If omitted, json will be used.
  
  * `@openapi-ignore-session-cookie`
+ * `@openapi-session-cookie`
 
-   Describes when session cookies are not used.
+   Toggle whether to use session cookies.
  
- * `@openapi-ignore-csrf-cookie`
+ * `@openapi-ignore-csrf-header`
+ * `@openapi-csrf-header`
 
-   Describes when CSRF cookies are not used.
+   Toggle whether to use CSRF headers.
 
 
 ### A very simple example
@@ -86,8 +92,6 @@ By writing in each method of Controller, [Swagger-PHP](https://github.com/zircot
      * Here is the description of the API
      *
      * @openapi
-     * @openapi-ignore-session-cookie
-     * @openapi-ignore-csrf-cookie
      * @openapi-tags TAG-A
      * @openapi-tags TAG-B
      * @openapi-response 200 #/components/schemas/ExampleModel Success

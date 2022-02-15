@@ -6,10 +6,9 @@
 namespace __Namespaces__;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 
 // OpenApiDoc //
-class OpenApiDoc
+class __OpenApiDoc__
 {
     //
 }
