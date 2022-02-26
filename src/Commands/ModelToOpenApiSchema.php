@@ -41,6 +41,10 @@ class ModelToOpenApiSchema extends ModelsCommand
      */
     protected $description = 'Create PHPSwagger schema file for models';
 
+    /**
+     * Laravel config root path
+     * @var string
+     */
     protected $config_root = 'auto-comment-for-php-swagger.documentations.';
 
     protected $schema_path = '';
@@ -112,7 +116,12 @@ class ModelToOpenApiSchema extends ModelsCommand
     }
 
     /** @noinspection SlowArrayOperationsInLoopInspection */
-    protected function generateDocs($loadModels, $ignore = '')
+    /**
+     * @param $loadModels
+     * @param string $ignore
+     * @return string
+     */
+    protected function generateDocs($loadModels, $ignore = ''): string
     {
         $path = rtrim($this->schema_path, '/') . '/';
 

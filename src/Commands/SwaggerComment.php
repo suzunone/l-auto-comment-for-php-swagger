@@ -143,10 +143,10 @@ COMMENT;
 
         $comment = <<<COMMENT
 @OA\\{$method}(
-tags={"{$tags}"},
-operationId="{$operationId}",
-path="/{$route_item['uri']}",
-description="{$description}",
+    tags={"{$tags}"},
+    operationId="{$operationId}",
+    path="/{$route_item['uri']}",
+    description="{$description}",
 
 COMMENT;
 
@@ -207,14 +207,14 @@ COMMENT;
         foreach ($match[1] as $path) {
             $comment .= <<<COMMENT
 @OA\\Parameter(
-name="{$path}",
-description="{$path}_id",
-@OA\\Schema(
-format="int64",
-type="integer"
-),
-in="path",
-required=true
+    name="{$path}",
+    description="{$path}_id",
+    @OA\\Schema(
+        format="int64",
+        type="integer"
+    ),
+    in="path",
+    required=true
 ),
 
 COMMENT;
@@ -332,8 +332,8 @@ COMMENT;
         $sub_comment = '';
         $comment = <<<COMMENT
 @OA\\Schema(
-schema="{$id}",
-type="object",
+    schema="{$id}",
+    type="object",
 allOf={
 
 COMMENT;
@@ -350,8 +350,8 @@ COMMENT;
             if (is_string($value)) {
                 $comment .= <<<COMMENT
 @OA\\Schema(
-required={"{$key}"},
-@OA\\Property(property="{$key}", ref="{$value}")
+    required={"{$key}"},
+    @OA\\Property(property="{$key}", ref="{$value}")
 ),
 
 COMMENT;
@@ -362,8 +362,8 @@ COMMENT;
             $sub_schema = $id . $key;
             $comment .= <<<COMMENT
 @OA\\Schema(
-required={"{$key}"},
-@OA\\Property(property="{$key}", ref="#/components/schemas/{$sub_schema}")
+    required={"{$key}"},
+    @OA\\Property(property="{$key}", ref="#/components/schemas/{$sub_schema}")
 ),
 
 COMMENT;
@@ -576,13 +576,13 @@ COMMENT;
         if ($using_session_cookie) {
             $comment .= <<<Comment
 @OA\\Parameter(
-name="{$cookie_name}",
-description="session cookie",
-@OA\\Schema(
-format="string"
-),
-in="cookie",
-required=false
+    name="{$cookie_name}",
+    description="session cookie",
+    @OA\\Schema(
+        format="string"
+    ),
+    in="cookie",
+    required=false
 ),
 
 Comment;
@@ -590,22 +590,22 @@ Comment;
         if ($using_csrf_cookie) {
             $comment .= <<<'Comment'
 @OA\Parameter(
-name="X-CSRF-TOKEN",
-description="CSRF-TOKEN",
-@OA\Schema(
-format="string"
-),
-in="header",
-required=false
+    name="X-CSRF-TOKEN",
+    description="CSRF-TOKEN",
+    @OA\Schema(
+        format="string"
+    ),
+    in="header",
+    required=false
 ),
 @OA\Parameter(
-name="X-XSRF-TOKEN",
-description="CSRF-TOKEN",
-@OA\Schema(
-format="string"
-),
-in="header",
-required=false
+    name="X-XSRF-TOKEN",
+    description="CSRF-TOKEN",
+    @OA\Schema(
+        format="string"
+    ),
+    in="header",
+    required=false
 ),
 
 Comment;

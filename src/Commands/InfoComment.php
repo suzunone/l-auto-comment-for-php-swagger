@@ -30,6 +30,10 @@ class InfoComment extends Command
      */
     protected $description = 'Create OA\\Info file';
 
+    /**
+     * Laravel config root path
+     * @var string
+     */
     protected $config_root = 'auto-comment-for-php-swagger.documentations.';
 
     /**
@@ -38,7 +42,7 @@ class InfoComment extends Command
      * @throws \ReflectionException
      * @return int
      */
-    public function handle()
+    public function handle(): int
     {
         $type = $this->argument('type') ?? 'default';
         $this->config_root .= $type . '.';
@@ -77,7 +81,55 @@ COMMENT;
         return 0;
     }
 
-    public function createInfo()
+    /**
+     * create @OA\Server tag
+     *
+     * @param array $value
+     * @return string
+     */
+    public function createServer(array $value): string
+    {
+        $res = '@OA\Server(' . "\n";
+
+        $server = [
+            'description' => $value['description'] ?? '',
+            'url' => $value['url'] ?? '',
+        ];
+
+        foreach ($server as $key => $item) {
+            if ($item === null) {
+                continue;
+            }
+
+            $res .= $this->keyValue($key, $item);
+        }
+
+        $ExternalDocumentation = $value['external_documentation'] ?? [];
+        if (!empty($ExternalDocumentation)) {
+            $res .= '@OA\ExternalDocumentation(' . "\n";
+
+            foreach ($ExternalDocumentation as $key => $item) {
+                if ($item === null) {
+                    continue;
+                }
+
+                $res .= $this->keyValue($key, $item);
+            }
+
+            $res .= ')' . "\n";
+        }
+
+        $res .= ')' . "\n";
+
+        return $res;
+    }
+
+    /**
+     * Create @OA\Info comment.
+     *
+     * @return string
+     */
+    protected function createInfo(): string
     {
         $open_api_info = $this->laravel['config']->get($this->config_root . 'open_api_info', []);
 
@@ -138,7 +190,12 @@ COMMENT;
         return $res;
     }
 
-    public function createTags()
+    /**
+     * Create @OA\Tag comment from config array.
+     *
+     * @return string
+     */
+    protected function createTags(): string
     {
         $open_api_info = $this->laravel['config']->get($this->config_root . 'open_api_info.tags', []);
 
@@ -151,7 +208,12 @@ COMMENT;
         return $res;
     }
 
-    public function createServers()
+    /**
+     * create @OA\Server comment from config.
+     *
+     * @return string
+     */
+    protected function createServers(): string
     {
         $open_api_info = $this->laravel['config']->get($this->config_root . 'open_api_info.servers', []);
 
@@ -164,18 +226,23 @@ COMMENT;
         return $res;
     }
 
-    public function createTag($tagName, $value)
+    /**
+     * create @OA\Tag comment
+     *
+     * @param string $tagName
+     * @param array $value
+     * @return string
+     */
+    protected function createTag(string $tagName, array $value): string
     {
         $res = '@OA\Tag(' . "\n";
 
-        $info = [
+        $tag = [
             'name' => $tagName,
             'description' => $value['description'] ?? '',
         ];
 
-        $ExternalDocumentation = $value['external_documentation'] ?? [];
-
-        foreach ($info as $key => $item) {
+        foreach ($tag as $key => $item) {
             if ($item === null) {
                 continue;
             }
@@ -183,6 +250,7 @@ COMMENT;
             $res .= $this->keyValue($key, $item);
         }
 
+        $ExternalDocumentation = $value['external_documentation'] ?? [];
         if (!empty($ExternalDocumentation)) {
             $res .= '@OA\ExternalDocumentation(' . "\n";
 
@@ -202,67 +270,14 @@ COMMENT;
         return $res;
     }
 
-    public function createServer($value)
-    {
-        $res = '@OA\Server(' . "\n";
-
-        $info = [
-            'description' => $value['description'] ?? '',
-            'url' => $value['url'] ?? '',
-        ];
-
-        $ExternalDocumentation = $value['external_documentation'] ?? [];
-
-        foreach ($info as $key => $item) {
-            if ($item === null) {
-                continue;
-            }
-
-            $res .= $this->keyValue($key, $item);
-        }
-
-        if (!empty($ExternalDocumentation)) {
-            $res .= '@OA\ExternalDocumentation(' . "\n";
-
-            foreach ($ExternalDocumentation as $key => $item) {
-                if ($item === null) {
-                    continue;
-                }
-
-                $res .= $this->keyValue($key, $item);
-            }
-
-            $res .= ')' . "\n";
-        }
-
-        $res .= ')' . "\n";
-
-        return $res;
-    }
-
-    public function createExternalDocumentation()
-    {
-        $res = '@OA\ExternalDocumentation(' . "\n";
-
-        $external_documentation = [
-            'description' => $value['external_documentation']['description'] ?? '',
-            'url' => $value['external_documentation']['url'] ?? '',
-        ];
-
-        foreach ($external_documentation as $key => $item) {
-            if ($item === null) {
-                continue;
-            }
-
-            $res .= $this->keyValue($key, $item);
-        }
-
-        $res .= ')' . "\n";
-
-        return $res;
-    }
-
-    public function keyValue($key, $value)
+    /**
+     * key value format
+     *
+     * @param string $key
+     * @param string $value
+     * @return string
+     */
+    protected function keyValue(string $key, string $value): string
     {
         return  <<<COMMENT
     {$key}="{$value}",
